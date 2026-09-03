@@ -6,6 +6,25 @@ struct ReportsController: RouteCollection {
     func boot(routes: any RoutesBuilder) throws {
         let reports = routes.grouped("api", "reports")
         reports.get("csv", use: csv)
+        reports.get("pdf", use: pdf)
+    }
+
+    func pdf(request: Request) async throws -> Response {
+        let language = Language(code: request.query[String.self, at: "lang"])
+        let user = try request.auth.require(UserProfile.self)
+        let (dashboard, payments) = try await load(on: request)
+
+        let fonts = try request.application.reportFonts()
+        let bytes = PDFReportBuilder(regular: fonts.regular, bold: fonts.bold, language: language)
+            .build(
+                dashboard: dashboard, payments: payments, userName: user.name,
+                generatedAt: .today())
+
+        var headers = HTTPHeaders()
+        headers.contentType = HTTPMediaType(type: "application", subType: "pdf")
+        headers.contentDisposition = .init(.attachment, filename: "homebudget_raport.pdf")
+
+        return Response(status: .ok, headers: headers, body: .init(data: bytes))
     }
 
     func csv(request: Request) async throws -> Response {
