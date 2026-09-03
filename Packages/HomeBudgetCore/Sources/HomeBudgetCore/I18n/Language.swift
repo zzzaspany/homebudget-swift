@@ -35,6 +35,14 @@ public enum NumberFormatting {
         return "\(isNegative ? "-" : "")\(grouped)\(language.decimalSeparator)\(fractionText)"
     }
 
+    /// Two decimals, dot separator, no grouping — the form that `<input type="number">` accepts
+    /// and that `Double(_:)` reads back.
+    public static func plain(_ value: Double) -> String {
+        let cents = Int((abs(value) * 100).rounded())
+        let fraction = cents % 100
+        return "\(value < 0 ? "-" : "")\(cents / 100).\(fraction < 10 ? "0" : "")\(fraction)"
+    }
+
     /// Amount with the currency marker, e.g. `1 234,56 zł` or `PLN 1,234.56`.
     public static func currency(_ value: Double, language: Language) -> String {
         switch language {

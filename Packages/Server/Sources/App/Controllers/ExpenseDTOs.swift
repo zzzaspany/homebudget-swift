@@ -56,10 +56,3 @@ struct PayExpenseRequest: Content {
 }
 
 extension PaymentRecord: @retroactive Content {}
-
-/// Cycles that repeat less often than monthly need to know which month they land on.
-extension Frequency {
-    var requiresDueMonth: Bool {
-        self == .yearly || self == .quarterly || self == .semiAnnual
-    }
-}

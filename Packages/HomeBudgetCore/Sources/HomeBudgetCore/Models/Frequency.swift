@@ -16,6 +16,11 @@ public enum Frequency: String, Codable, CaseIterable, Sendable {
         }
     }
 
+    /// Cycles longer than a month must say which month they fall in.
+    public var requiresDueMonth: Bool {
+        self == .yearly || self == .quarterly || self == .semiAnnual
+    }
+
     /// Whether the expense is paid less often than monthly and therefore needs a savings reserve.
     public var needsSinkingFund: Bool {
         self != .monthly

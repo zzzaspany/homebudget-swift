@@ -7,3 +7,6 @@ Packages/*/.swiftpm/
 .env
 data/
 Packages/*/Package.resolved.bak
+
+# Built WebAssembly bundle — regenerate with `make web`
+Packages/Server/Public/app/

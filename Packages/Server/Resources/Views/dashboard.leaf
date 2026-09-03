@@ -19,10 +19,16 @@
       data-dev-mode="#(devMode)"
     ></div>
 
-    <script type="module" src="/main.js"></script>
+    <script type="module">
+      import { init } from "/app/index.js";
+      init().catch((error) => {
+        document.getElementById("app").textContent = "Nie udało się uruchomić aplikacji: " + error;
+        console.error(error);
+      });
+    </script>
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
       }
     </script>
   </body>

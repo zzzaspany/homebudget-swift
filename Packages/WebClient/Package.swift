@@ -12,6 +12,7 @@ let package = Package(
             name: "WebClient",
             dependencies: [
                 .product(name: "JavaScriptKit", package: "JavaScriptKit"),
+                .product(name: "JavaScriptEventLoop", package: "JavaScriptKit"),
                 .product(name: "HomeBudgetCore", package: "HomeBudgetCore"),
             ]
         )

@@ -23,6 +23,15 @@ public enum Localization {
         return "\(monthAbbreviation(month, language: language)) '\(shortYear)"
     }
 
+    /// A date for display: `20 Sie 2026` in Polish, `Aug 20, 2026` in English.
+    public static func dateLabel(_ date: CalendarDate, language: Language) -> String {
+        let month = monthAbbreviation(date.month, language: language)
+        switch language {
+        case .pl: return "\(date.day) \(month) \(date.year)"
+        case .en: return "\(month) \(date.day), \(date.year)"
+        }
+    }
+
     /// Renders a stored period marker for display: `2026-08` becomes `Sie 2026`, `2026` stays as is.
     public static func periodLabel(_ period: String, language: Language) -> String {
         let parts = period.split(separator: "-")
