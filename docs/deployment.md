@@ -72,9 +72,12 @@ make image-push TAG=v1.0.0     # and push to GHCR
 ```
 
 Three stages: the client is compiled to WebAssembly, the server binary is built with a statically
-linked Swift runtime, and the runtime image carries neither toolchain. It comes out around 524MB,
-runs as a non-root user, and works the same under Apple's `container` on a Mac as under Podman
-here — it is `linux/arm64` in both cases.
+linked Swift runtime, and the runtime image carries neither toolchain. It comes out around 524MB
+and runs as a non-root user.
+
+**Build on the right architecture.** This host is x86_64; a Mac is arm64. An image built on a Mac
+will not run here. The image the server pulls comes from CI, which runs on x86_64 — `make image`
+locally is for testing on that machine only.
 
 The WebAssembly SDK is close to a gigabyte and sits in its own stage, so it is refetched only when
 the client changes. It is fetched with `curl --retry` rather than by `swift sdk install`, whose

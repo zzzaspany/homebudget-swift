@@ -71,7 +71,9 @@ make image                     # Apple container
 make image CONTAINER=podman    # or Podman, as on the server
 ```
 
-The same image runs on the Podman host and on a Mac; it is built for `linux/arm64` either way.
+Architectures differ, and it matters: the Mac is arm64, the Proxmox host that runs this is x86_64.
+A locally built image runs locally; the one the server pulls is built by CI on an x86_64 runner and
+pushed to GHCR. `make image` is for testing on the machine you are sitting at, not for shipping.
 
 ## Running locally
 
