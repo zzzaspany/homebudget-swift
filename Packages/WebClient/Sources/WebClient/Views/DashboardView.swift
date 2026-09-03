@@ -335,7 +335,7 @@ struct DashboardView {
         guard !state.payments.isEmpty else { return panel.appending(empty(.emptyPayments)) }
 
         let head = DOM.element("tr").appending(
-            ([.columnName, .columnCategory, .columnPeriod, .columnAmount, .columnDatePaid, .columnPaidBy] as [UIString])
+            ([.columnName, .columnCategory, .columnPeriod, .columnAmount, .columnDatePaid, .columnPaidBy, .columnInvoice] as [UIString])
                 .map { DOM.element("th", text: $0(language)) }
         )
 
@@ -346,7 +346,8 @@ struct DashboardView {
                 DOM.element("td", text: Localization.periodLabel(payment.period, language: language)),
                 DOM.element("td", class: "amount", text: money(payment.amountPaid)),
                 DOM.element("td", text: Localization.dateLabel(payment.datePaid, language: language)),
-                DOM.element("td", text: payment.paidBy)
+                DOM.element("td", text: payment.paidBy),
+                DOM.element("td").appending(invoiceLink(payment))
             )
         }
 
@@ -355,6 +356,19 @@ struct DashboardView {
             DOM.element("tbody").appending(Array(rows))
         )
         return panel.appending(DOM.element("div", class: "table-scroll").appending(table))
+    }
+
+    /// Invoices are financial documents, so they are fetched through an authenticated route
+    /// rather than served as static files.
+    private func invoiceLink(_ payment: PaymentRecord) -> JSObject {
+        guard payment.hasInvoice else {
+            return DOM.element("span", class: "muted", text: "—")
+        }
+        let link = DOM.element("a", class: "chip", text: "↓")
+        link.attribute("href", "/api/payments/\(payment.id)/invoice")
+        link.attribute("target", "_blank")
+        link.attribute("title", UIString.columnInvoice(language))
+        return link
     }
 
     // MARK: - Building blocks

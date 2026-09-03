@@ -53,7 +53,16 @@ struct APIClient: Sendable {
     }
 
     @discardableResult
-    func pay(expenseID: String, amount: Double?) async throws -> Expense {
+    func pay(expenseID: String, amount: Double?, invoice: JSValue? = nil) async throws -> Expense {
+        // With an attachment the request has to be multipart, which the browser assembles from a
+        // FormData body — including the boundary header, which is why none is set here.
+        if let invoice, !invoice.isNull, !invoice.isUndefined {
+            let form = JSObject.global.FormData.function!.new()
+            if let amount { _ = form.append!("amount_paid", NumberFormatting.plain(amount)) }
+            _ = form.append!("invoice_file", invoice)
+            return try decode(try await raw("/api/expenses/\(expenseID)/pay", method: "POST", form: form))
+        }
+
         let body = JSObject.global.Object.function!.new()
         body["amount_paid"] = amount.map { JSValue.number($0) } ?? .null
         return try await send("/api/expenses/\(expenseID)/pay", method: "POST", body: body)
@@ -70,6 +79,13 @@ struct APIClient: Sendable {
         return try decode(try await raw(path, method: method, body: json))
     }
 
+    private func raw(_ path: String, method: String, form: JSObject) async throws -> String {
+        let options = JSObject.global.Object.function!.new()
+        options["method"] = .string(method)
+        options["body"] = .object(form)
+        return try await perform(path, options: options)
+    }
+
     private func raw(_ path: String, method: String, body: String?) async throws -> String {
         let options = JSObject.global.Object.function!.new()
         options["method"] = .string(method)
@@ -80,6 +96,11 @@ struct APIClient: Sendable {
             headers["Content-Type"] = .string("application/json")
             options["headers"] = .object(headers)
         }
+
+        return try await perform(path, options: options)
+    }
+
+    private func perform(_ path: String, options: JSObject) async throws -> String {
 
         guard let promiseObject = JSObject.global.fetch!(path, options).object,
             let promise = JSPromise(promiseObject)

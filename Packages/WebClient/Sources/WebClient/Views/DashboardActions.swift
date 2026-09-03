@@ -19,8 +19,13 @@ extension DashboardView {
         amountField.attribute("step", "0.01")
         amountField.attribute("min", "0.01")
 
+        let invoiceField = DOM.element("input", class: "input")
+        invoiceField.attribute("type", "file")
+        invoiceField.attribute("accept", "application/pdf,image/*")
+
         let body = DOM.element("div", class: "form").appending(
-            labelled(UIString.columnAmount(state.language), amountField))
+            labelled(UIString.columnAmount(state.language), amountField),
+            labelled(UIString.invoiceOptional(state.language), invoiceField))
 
         // A variable bill suggests the average of what has been paid before.
         if expense.isVariable {

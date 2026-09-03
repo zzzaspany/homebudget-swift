@@ -28,6 +28,8 @@ public enum UIString: String, CaseIterable, Sendable {
     case columnPeriod
     case columnPaidBy
     case columnDatePaid
+    case columnInvoice
+    case invoiceOptional
 
     case searchPlaceholder
     case filterAllFrequencies
@@ -95,6 +97,8 @@ public enum UIString: String, CaseIterable, Sendable {
         .columnPeriod: "Okres",
         .columnPaidBy: "Opłacił(a)",
         .columnDatePaid: "Data wpłaty",
+        .columnInvoice: "Faktura",
+        .invoiceOptional: "Faktura (opcjonalnie)",
 
         .searchPlaceholder: "Szukaj po nazwie lub kategorii…",
         .filterAllFrequencies: "Wszystkie cykle",
@@ -152,6 +156,8 @@ public enum UIString: String, CaseIterable, Sendable {
         .columnPeriod: "Period",
         .columnPaidBy: "Paid by",
         .columnDatePaid: "Payment date",
+        .columnInvoice: "Invoice",
+        .invoiceOptional: "Invoice (optional)",
 
         .searchPlaceholder: "Search by name or category…",
         .filterAllFrequencies: "All cycles",
