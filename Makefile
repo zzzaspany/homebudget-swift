@@ -1,0 +1,31 @@
+# Builds keep their scratch directory on local disk. The repository lives on an SMB share where
+# SwiftPM's index writes fail on rename and dependency checkouts crawl.
+SCRATCH := $(HOME)/Library/Caches/homebudget-swift
+SWIFT_FLAGS := --disable-index-store
+
+# XCTest and Swift Testing ship with Xcode but not with the Command Line Tools, so point at Xcode
+# here rather than requiring a `sudo xcode-select --switch`.
+XCODE_DIR := /Applications/Xcode.app/Contents/Developer
+ifneq ($(wildcard $(XCODE_DIR)),)
+export DEVELOPER_DIR := $(XCODE_DIR)
+endif
+
+.PHONY: build test run core server clean
+
+build: core server
+
+core:
+	cd Packages/HomeBudgetCore && swift build $(SWIFT_FLAGS) --scratch-path $(SCRATCH)/core
+
+server:
+	cd Packages/Server && swift build $(SWIFT_FLAGS) --scratch-path $(SCRATCH)/server
+
+test:
+	cd Packages/HomeBudgetCore && swift test $(SWIFT_FLAGS) --scratch-path $(SCRATCH)/core
+	cd Packages/Server && swift test $(SWIFT_FLAGS) --scratch-path $(SCRATCH)/server
+
+run:
+	cd Packages/Server && swift run $(SWIFT_FLAGS) --scratch-path $(SCRATCH)/server App serve
+
+clean:
+	rm -rf $(SCRATCH)

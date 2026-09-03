@@ -1,0 +1,139 @@
+import Testing
+
+@testable import HomeBudgetCore
+
+/// Port of `tests/test_sinking_funds.py`, extended with the biweekly proration the Python app dropped.
+@Suite("Dashboard aggregation")
+struct DashboardTests {
+    let today = CalendarDate(year: 2026, month: 8, day: 15)
+
+    let rent = Expense(
+        id: "exp1", name: "Czynsz", amount: 1000, frequency: .monthly, dueDay: 10,
+        category: "Media i Eksploatacja")
+    let insurance = Expense(
+        id: "exp2", name: "Ubezpieczenie OC", amount: 1200, frequency: .yearly, dueDay: 15,
+        dueMonth: 5, category: "Podatki")
+    let waste = Expense(
+        id: "exp3", name: "Śmieci", amount: 300, frequency: .quarterly, dueDay: 1,
+        dueMonth: 1, category: "Media i Eksploatacja")
+
+    @Test("KPI totals across mixed frequencies")
+    func kpis() {
+        let dashboard = DashboardBuilder.build(expenses: [rent, insurance, waste], today: today)
+
+        #expect(dashboard.kpis.monthlyTotal == 1000)
+        #expect(dashboard.kpis.yearlyTotal == 1200)
+        // 1000 monthly + 1200/12 yearly + 300/3 quarterly
+        #expect(dashboard.kpis.proRatedMonthly == 1200)
+        #expect(dashboard.kpis.sinkingFundTotal == 200)
+        #expect(dashboard.sinkingFundItems.count == 2)
+    }
+
+    /// The Python app counted biweekly expenses in the category chart but left them out of every
+    /// KPI, so a fortnightly bill silently vanished from the monthly budget.
+    @Test("Biweekly expenses are prorated into the KPIs")
+    func biweeklyIsProrated() {
+        let internet = Expense(
+            id: "exp4", name: "Internet", amount: 120, frequency: .biweekly, dueDay: 17,
+            category: "Media i Eksploatacja")
+        let dashboard = DashboardBuilder.build(expenses: [rent, internet], today: today)
+
+        let expectedReserve = 120.0 * 26.0 / 12.0
+        #expect(dashboard.kpis.sinkingFundTotal == expectedReserve)
+        #expect(dashboard.kpis.proRatedMonthly == 1000 + expectedReserve)
+        #expect(dashboard.sinkingFundItems.contains { $0.name == "Internet" })
+    }
+
+    @Test("Inactive expenses are listed but excluded from every total")
+    func inactiveExcluded() {
+        var disabled = insurance
+        disabled.active = false
+        let dashboard = DashboardBuilder.build(expenses: [rent, disabled], today: today)
+
+        #expect(dashboard.expenses.count == 2)
+        #expect(dashboard.kpis.yearlyTotal == 0)
+        #expect(dashboard.kpis.proRatedMonthly == 1000)
+        #expect(dashboard.sinkingFundItems.isEmpty)
+        #expect(dashboard.categoryBreakdown.count == 1)
+    }
+
+    @Test("Category breakdown sums prorated amounts per category")
+    func categoryBreakdown() {
+        let dashboard = DashboardBuilder.build(expenses: [rent, insurance, waste], today: today)
+
+        let utilities = dashboard.categoryBreakdown.first { $0.category == "Media i Eksploatacja" }
+        let taxes = dashboard.categoryBreakdown.first { $0.category == "Podatki" }
+        #expect(utilities?.proratedAmount == 1100)  // 1000 rent + 300/3 waste
+        #expect(taxes?.proratedAmount == 100)  // 1200/12
+    }
+
+    @Test("Projection charges full amounts in the months they fall due")
+    func projection() {
+        let dashboard = DashboardBuilder.build(expenses: [rent, insurance, waste], today: today)
+        #expect(dashboard.projection.count == 12)
+
+        #expect(dashboard.projection[0].year == 2026)
+        #expect(dashboard.projection[0].month == 8)
+        #expect(dashboard.projection[0].amount == 1000)  // rent only
+
+        // October is a quarterly month for the waste bill.
+        let october = dashboard.projection.first { $0.month == 10 && $0.year == 2026 }
+        #expect(october?.amount == 1300)
+
+        // The yearly insurance lands in May of the following year.
+        let may = dashboard.projection.first { $0.month == 5 && $0.year == 2027 }
+        #expect(may?.amount == 2200)
+    }
+
+    @Test("Notifications cover alerting expenses, most urgent first")
+    func notifications() {
+        let overdue = Expense(
+            id: "a", name: "Prąd", amount: 200, frequency: .monthly, dueDay: 5,
+            category: "Media i Eksploatacja", lastPaidPeriod: "2026-07")
+        let dueSoon = Expense(
+            id: "b", name: "Woda", amount: 80, frequency: .monthly, dueDay: 18,
+            category: "Media i Eksploatacja", lastPaidPeriod: "2026-07")
+        let settled = Expense(
+            id: "c", name: "Gaz", amount: 90, frequency: .monthly, dueDay: 20,
+            category: "Media i Eksploatacja", lastPaidPeriod: "2026-08")
+
+        let dashboard = DashboardBuilder.build(expenses: [dueSoon, settled, overdue], today: today)
+
+        #expect(dashboard.notifications.map(\.id) == ["a", "b"])
+        #expect(dashboard.kpis.overdueCount == 1)
+        #expect(dashboard.kpis.dueSoonCount == 1)
+    }
+
+    @Test("Price history reports drift between first and latest payment")
+    func priceHistory() {
+        let payments = [
+            Payment(
+                id: "p2", expenseID: "exp1", amountPaid: 250,
+                datePaid: CalendarDate(year: 2026, month: 7, day: 3), period: "2026-07", paidBy: "konrad"),
+            Payment(
+                id: "p1", expenseID: "exp1", amountPaid: 200,
+                datePaid: CalendarDate(year: 2026, month: 1, day: 3), period: "2026-01", paidBy: "konrad"),
+            Payment(
+                id: "p3", expenseID: "other", amountPaid: 999,
+                datePaid: CalendarDate(year: 2026, month: 7, day: 3), period: "2026-07", paidBy: "konrad"),
+        ]
+
+        let history = PriceHistory.build(expenseID: "exp1", payments: payments)
+        #expect(history.totalRecords == 2)
+        #expect(history.priceChangePercent == 25.0)
+        #expect(history.entries.first?.amountPaid == 200)
+        #expect(history.averageAmountPaid == 225)
+    }
+
+    @Test("Price history needs two payments before reporting drift")
+    func priceHistorySinglePayment() {
+        let payments = [
+            Payment(
+                id: "p1", expenseID: "exp1", amountPaid: 200,
+                datePaid: CalendarDate(year: 2026, month: 1, day: 3), period: "2026-01", paidBy: "konrad")
+        ]
+        let history = PriceHistory.build(expenseID: "exp1", payments: payments)
+        #expect(history.priceChangePercent == 0)
+        #expect(history.averageAmountPaid == 200)
+    }
+}
