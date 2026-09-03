@@ -71,18 +71,37 @@ Credentials live in `.env`, which is never committed.
 
 ## Web client
 
-The client is plain Swift compiled to WebAssembly, talking to the DOM through JavaScriptKit.
+Plain Swift compiled to WebAssembly, talking to the DOM through JavaScriptKit.
 [Tokamak](https://github.com/TokamakUI/Tokamak) — the SwiftUI-shaped framework that would have been
 the closer fit — was archived in January 2026 and targets Swift 5.6, so it was ruled out.
+
+Two constraints shaped the result. Foundation stays out of the client: importing it for
+`JSONDecoder` took the binary from 9 MB to 60 MB, so JSON is parsed by the browser and mapped onto
+`Codable` types by JavaScriptKit's `JSValueDecoder`. And `HomeBudgetCore` avoids Foundation for the
+same reason, which is why it carries its own calendar arithmetic and number formatting rather than
+leaning on `Calendar` and `NumberFormatter`. The release bundle is 12 MB, 2.3 MB over brotli.
+
+Charts are SVG built in Swift, and the month calendar's layout lives in `HomeBudgetCore` so the iOS
+app can reuse it.
+
+## Reports
+
+CSV is generated in `HomeBudgetCore`. PDF is written by hand in `Packages/Server/Sources/App/PDF`:
+the fourteen standard PDF fonts are Latin-1, so Polish text needs an embedded font, which in turn
+needs enough TrueType parsing to read glyph metrics and the character map. DejaVu Sans is vendored
+under `Packages/Server/Resources/Fonts` (Bitstream Vera licence, which permits embedding).
 
 ## Status
 
 - [x] Phase 1 — domain logic (status, proration, projections, price history, i18n) + tests
-- [x] Phase 2 — Vapor API + PostgreSQL — verified end to end against the homelab database
-- [ ] Phase 3 — web client
-- [ ] Phase 4 — CSV/PDF reports, e-mail alerts (CSV export done in `HomeBudgetCore`)
-- [ ] Phase 5 — container/Quadlet deployment
+- [x] Phase 2 — Vapor API + PostgreSQL
+- [x] Phase 3 — web client: dashboard, charts, calendar, dialogs, invoice attachments
+- [x] Phase 4 — CSV and PDF reports, e-mail alerts
+- [x] Phase 5 — container image, Quadlet units, CI
 - [ ] Phase 6 — native iOS/iPadOS app
+
+Feature parity with the Python app is reached. See [docs/deployment.md](docs/deployment.md) for
+running it.
 
 ## Deliberate differences from the Python app
 

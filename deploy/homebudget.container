@@ -1,0 +1,22 @@
+[Unit]
+Description=HomeBudget
+Requires=homebudget-postgres.service
+After=homebudget-postgres.service
+
+[Container]
+ContainerName=homebudget
+Image=ghcr.io/zzzaspany/homebudget-swift:latest
+AutoUpdate=registry
+Network=homebudget.network
+PublishPort=8000:8000
+Volume=homebudget-uploads:/app/data/uploads
+EnvironmentFile=%h/.config/containers/systemd/homebudget.env
+# Fluent refuses to start against a schema it has not migrated, so this runs first.
+ExecStartPre=/usr/bin/podman run --rm --network homebudget --env-file %h/.config/containers/systemd/homebudget.env ghcr.io/zzzaspany/homebudget-swift:latest migrate --yes
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

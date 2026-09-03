@@ -1,0 +1,8 @@
+[Unit]
+Description=HomeBudget internal network
+
+[Network]
+NetworkName=homebudget
+
+[Install]
+WantedBy=default.target
