@@ -251,6 +251,26 @@ extension DashboardView {
         }
     }
 
+    // MARK: - E-mail alerts
+
+    func sendEmailAlerts(from button: JSObject) {
+        let language = state.language
+        button.disabled = .boolean(true)
+        button.textContent = .string(UIString.loading(language))
+
+        Task {
+            let api = APIClient()
+            do {
+                let result = try await api.sendAlertEmail(language: language)
+                Toast.show(result.message, kind: result.success ? .success : .failure)
+            } catch {
+                Toast.show(String(describing: error), kind: .failure)
+            }
+            button.disabled = .boolean(false)
+            button.textContent = .string(UIString.actionSendEmail(language))
+        }
+    }
+
     // MARK: - Category budgets
 
     func editBudget(for category: String, current: Double) {

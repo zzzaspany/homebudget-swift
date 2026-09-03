@@ -48,6 +48,18 @@ struct APIClient: Sendable {
         try await send("/api/expenses/\(id)", method: "PUT", body: body.jsonObject)
     }
 
+    struct AlertEmailResult: Decodable, Sendable {
+        let success: Bool
+        let message: String
+        let alertCount: Int
+    }
+
+    func sendAlertEmail(language: Language) async throws -> AlertEmailResult {
+        let body = JSObject.global.Object.function!.new()
+        return try await send(
+            "/api/notifications/send-email?lang=\(language.rawValue)", method: "POST", body: body)
+    }
+
     func deleteExpense(id: String) async throws {
         _ = try await raw("/api/expenses/\(id)", method: "DELETE", body: nil)
     }

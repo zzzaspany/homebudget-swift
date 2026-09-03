@@ -734,3 +734,16 @@ h2 {
     font-size: 0.7rem;
   }
 }
+
+.panel-footer {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--card-border);
+}
+.button.subtle {
+  width: 100%;
+  color: var(--text-muted);
+}
+.button.subtle:hover {
+  color: var(--text);
+}

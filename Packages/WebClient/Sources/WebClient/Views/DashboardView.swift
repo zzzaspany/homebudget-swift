@@ -154,8 +154,12 @@ struct DashboardView {
                 )
         }
 
-        // The e-mail alert button arrives with the notification endpoint in Phase 4.
-        return panel.appending(rows)
+        let emailButton = DOM.element(
+            "button", class: "button subtle", text: UIString.actionSendEmail(language))
+        emailButton.on("click") { sendEmailAlerts(from: emailButton) }
+
+        return panel.appending(rows).appending(
+            DOM.element("div", class: "panel-footer").appending(emailButton))
     }
 
     // MARK: - Charts
