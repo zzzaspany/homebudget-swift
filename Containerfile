@@ -7,7 +7,17 @@ FROM swift:6.3.3-noble AS wasm
 
 ARG WASM_SDK_URL=https://download.swift.org/swift-6.3.3-release/wasm-sdk/swift-6.3.3-RELEASE/swift-6.3.3-RELEASE_wasm.artifactbundle.tar.gz
 ARG WASM_SDK_CHECKSUM=cabfa08b73bb8ac783927ecd15fa386e99d0c139c5f232445067bcf58379cae7
-RUN swift sdk install "$WASM_SDK_URL" --checksum "$WASM_SDK_CHECKSUM"
+
+# Fetched with curl rather than left to `swift sdk install`, whose downloader gives up after a
+# minute with no retry. That is enough for the best part of a gigabyte on a fast link but not
+# under Apple's `container`, whose VM networking timed out here every time.
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+RUN curl --location --fail --show-error --silent \
+    --retry 5 --retry-delay 5 --retry-all-errors --continue-at - \
+    --output /tmp/wasm-sdk.tar.gz "$WASM_SDK_URL" \
+    && swift sdk install /tmp/wasm-sdk.tar.gz --checksum "$WASM_SDK_CHECKSUM" \
+    && rm -f /tmp/wasm-sdk.tar.gz
 
 WORKDIR /build
 COPY Packages/HomeBudgetCore Packages/HomeBudgetCore

@@ -23,30 +23,55 @@ deliberately do not share one manifest.
 
 The iOS app will be added later as a fourth package, reusing `HomeBudgetCore` unchanged.
 
-## Building and testing
+## Working on it
+
+`make` on its own lists every target. The ones you need most:
 
 ```bash
-make build   # both packages
-make test    # both test suites
-make run     # start the API on http://localhost:8000
+make doctor   # check the toolchains, runtime and database this project expects
+make build    # all three packages
+make test     # every suite
+make run      # serve on http://localhost:8000, reading .env
+make image    # build the container image
 ```
 
-The Makefile exists because this repository lives on the SMB-mounted `/Volumes/Multimedia` share,
-which Swift tooling handles badly: the indexer's record writes fail on rename (`failed to rename …
-File exists`), and dependency checkouts crawl. Every target therefore passes `--disable-index-store`
-and keeps its build directory in `~/Library/Caches/homebudget-swift`. A clone on local disk can drop
-both and use plain `swift build` / `swift test`.
+There is no Xcode project, and none is needed — open a package directly:
+
+```bash
+open Packages/Server/Package.swift
+```
+
+`WebClient` is the exception: Xcode cannot build it, because Apple's clang has no WebAssembly
+target and JavaScriptKit has a C target. Use `make web`.
 
 ### Toolchains
 
-Two are needed, for different targets:
+Two, for different targets. `make doctor` reports on both.
 
 | Target | Toolchain | Why |
 | --- | --- | --- |
-| macOS build + tests | Xcode | XCTest and Swift Testing do not ship with the Command Line Tools |
-| WebAssembly | swift.org toolchain + `swift sdk install …_wasm` | Apple's clang has no WebAssembly target, so JavaScriptKit's C target cannot build under Xcode's toolchain |
+| macOS build and tests | Xcode | XCTest and Swift Testing do not ship with the Command Line Tools |
+| WebAssembly | swift.org toolchain plus `swift sdk install …_wasm` | Apple's clang has no WebAssembly backend |
 
-The Makefile points `DEVELOPER_DIR` at Xcode so no `sudo xcode-select --switch` is needed.
+The Makefile points `DEVELOPER_DIR` at Xcode, so no `sudo xcode-select --switch` is needed, and
+unsets it for the WebAssembly build.
+
+Every target passes `--disable-index-store` and keeps its build directory under
+`~/Library/Caches/homebudget-swift`, because this repository lives on an SMB share where the
+indexer's writes fail on rename and checkouts crawl. A clone on local disk needs neither.
+
+### Container runtime
+
+Defaults to Apple's [`container`](https://github.com/apple/container), which runs OCI images
+natively on Apple silicon, each in its own lightweight VM. Any OCI runtime works:
+
+```bash
+brew install container && container system start
+make image                     # Apple container
+make image CONTAINER=podman    # or Podman, as on the server
+```
+
+The same image runs on the Podman host and on a Mac; it is built for `linux/arm64` either way.
 
 ## Running locally
 
@@ -54,7 +79,7 @@ Copy `.env.example` to `.env` and point `DATABASE_URL` at a PostgreSQL instance.
 substitutes a local user, so no reverse proxy is required.
 
 ```bash
-cd Packages/Server && swift run App migrate --yes
+make migrate
 make run
 ```
 

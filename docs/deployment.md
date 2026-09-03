@@ -65,12 +65,21 @@ keep dumps small, which does mean they need backing up separately.
 ## Building the image
 
 ```bash
-podman build -f Containerfile -t homebudget-swift .
+make image                     # Apple container, the default on a Mac
+make image CONTAINER=podman    # on the server
+make image TAG=v1.0.0          # tag it
+make image-push TAG=v1.0.0     # and push to GHCR
 ```
 
 Three stages: the client is compiled to WebAssembly, the server binary is built with a statically
-linked Swift runtime, and the runtime image carries neither toolchain. The WebAssembly SDK is a
-large download but sits in its own stage, so it is only refetched when the client changes.
+linked Swift runtime, and the runtime image carries neither toolchain. It comes out around 524MB,
+runs as a non-root user, and works the same under Apple's `container` on a Mac as under Podman
+here — it is `linux/arm64` in both cases.
+
+The WebAssembly SDK is close to a gigabyte and sits in its own stage, so it is refetched only when
+the client changes. It is fetched with `curl --retry` rather than by `swift sdk install`, whose
+downloader gives up after a minute without retrying — enough under Docker, but it failed every time
+under Apple's `container`, whose VM networking is slower.
 
 ## Health
 
