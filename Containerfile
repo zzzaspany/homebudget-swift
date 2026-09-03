@@ -3,7 +3,7 @@
 # The client is compiled to WebAssembly in its own stage. It needs the Swift SDK for
 # wasm32-unknown-wasi, which is a large download, so keeping it here means the runtime image never
 # carries it and the layer is reused whenever only server code changes.
-FROM swift:6.3.3-noble AS wasm
+FROM docker.io/library/swift:6.3.3-noble AS wasm
 
 ARG WASM_SDK_URL=https://download.swift.org/swift-6.3.3-release/wasm-sdk/swift-6.3.3-RELEASE/swift-6.3.3-RELEASE_wasm.artifactbundle.tar.gz
 ARG WASM_SDK_CHECKSUM=cabfa08b73bb8ac783927ecd15fa386e99d0c139c5f232445067bcf58379cae7
@@ -29,7 +29,7 @@ RUN swift package --swift-sdk swift-6.3.3-RELEASE_wasm \
 
 
 # The Vapor binary.
-FROM swift:6.3.3-noble AS server
+FROM docker.io/library/swift:6.3.3-noble AS server
 
 WORKDIR /build
 COPY Packages/HomeBudgetCore Packages/HomeBudgetCore
@@ -42,7 +42,7 @@ RUN swift build -c release --static-swift-stdlib -Xlinker -no-pie
 
 
 # Runtime. The Swift runtime is linked statically above, so this needs no toolchain.
-FROM ubuntu:noble
+FROM docker.io/library/ubuntu:noble
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates tzdata libcurl4 libxml2 \

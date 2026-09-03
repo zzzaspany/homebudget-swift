@@ -24,6 +24,11 @@ IMAGE ?= homebudget-swift
 TAG ?= latest
 REGISTRY ?= ghcr.io/zzzaspany
 
+# The Podman host, which is x86_64 — the architecture the server actually runs. A Mac builds
+# arm64, so anything destined for deployment is built there or by CI, never locally.
+BUILD_HOST ?= user@build-host
+BUILD_DIR ?= ~/build/homebudget-swift
+
 # Apple's container runs OCI images natively on Apple silicon; override for Docker or Podman.
 CONTAINER ?= container
 
@@ -34,7 +39,7 @@ endef
 
 .DEFAULT_GOAL := help
 .PHONY: help build core server web test test-core test-server run migrate revert \
-        image image-run image-push shell db-psql db-backup db-reset lint clean clean-all doctor
+        image image-run image-push image-remote image-remote-push shell db-psql db-backup db-reset lint clean clean-all doctor
 
 # --- Help --------------------------------------------------------------------
 
@@ -106,6 +111,17 @@ image-run: ## Run the built image on port 8000, reading .env
 image-push: image ## Push the image to the registry
 	$(CONTAINER) tag $(IMAGE):$(TAG) $(REGISTRY)/$(IMAGE):$(TAG)
 	$(CONTAINER) push $(REGISTRY)/$(IMAGE):$(TAG)
+
+image-remote: ## Build the x86_64 image on the Podman host, natively
+	@echo "Syncing to $(BUILD_HOST)"
+	@rsync -az --delete \
+		--exclude='.git' --exclude='.build' --exclude='backups' \
+		--exclude='Packages/Server/Public/app' --exclude='.env' \
+		./ $(BUILD_HOST):$(BUILD_DIR)/
+	@ssh $(BUILD_HOST) 'cd $(BUILD_DIR) && podman build --file Containerfile --tag $(REGISTRY)/$(IMAGE):$(TAG) .'
+
+image-remote-push: image-remote ## Build on the Podman host and push to the registry
+	@ssh $(BUILD_HOST) 'podman push $(REGISTRY)/$(IMAGE):$(TAG)'
 
 shell: ## Open a shell inside the image, to inspect what shipped
 	$(CONTAINER) run --rm --interactive --tty --entrypoint /bin/bash $(IMAGE):$(TAG)
