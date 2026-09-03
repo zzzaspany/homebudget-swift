@@ -41,14 +41,20 @@ body.light-theme {
   box-sizing: border-box;
 }
 
+/* Every size below is in rem, which resolves against the root element — so this one value
+   scales the whole interface. Raise it if the text should be larger. */
+html {
+  font-size: 18px;
+}
+
 body {
   margin: 0 auto;
   max-width: 1500px;
-  padding: 1.75rem;
+  padding: 1.5rem;
   background: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 17px;
+  font-size: 1rem;
   line-height: 1.6;
   transition: var(--transition);
 }
@@ -59,10 +65,10 @@ h2 {
   font-weight: 600;
 }
 h1 {
-  font-size: 1.6rem;
+  font-size: 1.45rem;
 }
 h2 {
-  font-size: 1.05rem;
+  font-size: 1rem;
   letter-spacing: 0.01em;
 }
 
@@ -70,7 +76,7 @@ h2 {
   color: var(--text-muted);
 }
 .small {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 .grow {
   flex: 1;
@@ -160,10 +166,10 @@ h2 {
 }
 .kpi-label {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.875rem;
 }
 .kpi-value {
-  font-size: 1.9rem;
+  font-size: 1.75rem;
   font-weight: 600;
 }
 .kpi-primary {
@@ -347,7 +353,7 @@ h2 {
 }
 .table th {
   text-align: left;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -476,7 +482,7 @@ h2 {
   font-size: 0.9rem;
 }
 .change {
-  font-size: 1.9rem;
+  font-size: 1.7rem;
   font-weight: 600;
   margin: 0 0 0.6rem;
 }
