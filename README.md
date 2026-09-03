@@ -62,18 +62,32 @@ indexer's writes fail on rename and checkouts crawl. A clone on local disk needs
 
 ### Container runtime
 
-Defaults to Apple's [`container`](https://github.com/apple/container), which runs OCI images
-natively on Apple silicon, each in its own lightweight VM. Any OCI runtime works:
+Apple's [`container`](https://github.com/apple/container) runs OCI images natively on Apple
+silicon, each in its own lightweight VM:
 
 ```bash
 brew install container && container system start
-make image                     # Apple container
-make image CONTAINER=podman    # or Podman, as on the server
 ```
 
-Architectures differ, and it matters: the Mac is arm64, the Proxmox host that runs this is x86_64.
-A locally built image runs locally; the one the server pulls is built by CI on an x86_64 runner and
-pushed to GHCR. `make image` is for testing on the machine you are sitting at, not for shipping.
+**Build images elsewhere.** Two reasons, both discovered the hard way:
+
+Architecture. A Mac is arm64; the Podman host that runs this is x86_64. An image built on the Mac
+will not start there.
+
+And `container` 1.3.1 cannot build this image at all. Its builder VM resets to 2 CPU and 2 GB on
+every build, discarding whatever `container builder start --cpus --memory` was given — verified by
+watching the setting revert in `containers/buildkit/config.json` seconds after a build begins. The
+Swift compile ran an hour on 2 GB without finishing. Running containers is unaffected and works
+well.
+
+So images are built where they will run:
+
+```bash
+make image-remote        # on the Podman host, natively x86_64
+make image-remote-push   # and push to GHCR
+```
+
+CI does the same on an x86_64 runner. `make image` builds locally, for a machine that can.
 
 ## Running locally
 
