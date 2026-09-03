@@ -42,13 +42,14 @@ body.light-theme {
 }
 
 body {
-  margin: 0;
-  padding: 1.5rem;
+  margin: 0 auto;
+  max-width: 1500px;
+  padding: 1.75rem;
   background: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 16px;
-  line-height: 1.55;
+  font-size: 17px;
+  line-height: 1.6;
   transition: var(--transition);
 }
 
@@ -58,7 +59,7 @@ h2 {
   font-weight: 600;
 }
 h1 {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
 }
 h2 {
   font-size: 1.05rem;
@@ -69,7 +70,7 @@ h2 {
   color: var(--text-muted);
 }
 .small {
-  font-size: 0.875rem;
+  font-size: 0.9rem;
 }
 .grow {
   flex: 1;
@@ -140,7 +141,7 @@ h2 {
   color: var(--danger);
   border-radius: 999px;
   padding: 0.05rem 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
@@ -159,10 +160,10 @@ h2 {
 }
 .kpi-label {
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 .kpi-value {
-  font-size: 1.8rem;
+  font-size: 1.9rem;
   font-weight: 600;
 }
 .kpi-primary {
@@ -180,7 +181,7 @@ h2 {
 
 .layout {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 420px 1fr;
   gap: 1rem;
   align-items: start;
 }
@@ -234,9 +235,10 @@ h2 {
 }
 .budget-head {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.5rem;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
 }
 .bar {
   height: 6px;
@@ -345,7 +347,7 @@ h2 {
 }
 .table th {
   text-align: left;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -376,9 +378,9 @@ h2 {
 
 .badge {
   display: inline-block;
-  padding: 0.2rem 0.6rem;
+  padding: 0.25rem 0.65rem;
   border-radius: 999px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 .badge.paid {
