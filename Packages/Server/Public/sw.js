@@ -1,5 +1,12 @@
-const CACHE_NAME = 'homebudget-v1';
-const ASSETS = ['/', '/manifest.json', '/icon.svg'];
+const CACHE_NAME = 'homebudget-v2';
+const ASSETS = [
+  '/',
+  '/manifest.json',
+  '/icon.svg',
+  '/styles.css',
+  '/app/index.js',
+  '/vendor/browser_wasi_shim.js',
+];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));

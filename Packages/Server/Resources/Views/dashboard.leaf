@@ -19,6 +19,11 @@
       data-dev-mode="#(devMode)"
     ></div>
 
+    <!-- The generated bundle imports the WASI shim by bare name. Mapping it to a vendored copy
+         rather than a CDN keeps the app working offline, which is the point of the service worker. -->
+    <script type="importmap">
+      { "imports": { "@bjorn3/browser_wasi_shim": "/vendor/browser_wasi_shim.js" } }
+    </script>
     <script type="module">
       import { init } from "/app/index.js";
       init().catch((error) => {

@@ -29,7 +29,7 @@ server:
 web:
 	cd Packages/WebClient && . $(SWIFTLY_ENV) && unset DEVELOPER_DIR && \
 		swift package --swift-sdk $(WASM_SDK) --scratch-path $(SCRATCH)/web \
-		--allow-writing-to-package-directory js -c release --use-cdn \
+		--allow-writing-to-package-directory js -c release \
 		--output ../Server/Public/app
 
 test:
