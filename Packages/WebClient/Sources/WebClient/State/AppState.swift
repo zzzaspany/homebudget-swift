@@ -14,6 +14,10 @@ final class AppState {
     var frequencyFilter: Frequency?
     var statusFilter: ExpenseStatus?
 
+    var view: MainView = .list
+    var calendarYear: Int = CalendarDate.today().year
+    var calendarMonth: Int = CalendarDate.today().month
+
     private let api = APIClient()
 
     func reload() async {
@@ -51,6 +55,11 @@ final class AppState {
             return (share.category, share.proratedAmount, limit)
         }
     }
+}
+
+enum MainView: String {
+    case list
+    case calendar
 }
 
 extension String {

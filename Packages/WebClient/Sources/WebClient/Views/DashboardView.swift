@@ -23,8 +23,16 @@ struct DashboardView {
             return
         }
 
+        root.appending(kpiRow(dashboard.kpis), viewSwitcher())
+
+        guard state.view == .list else {
+            root.appending(
+                CalendarView(state: state, onRender: onRender, onPay: { pay(expenseID: $0, amount: nil) })
+                    .render())
+            return
+        }
+
         root.appending(
-            kpiRow(dashboard.kpis),
             DOM.element("div", class: "layout").appending(
                 DOM.element("div", class: "column").appending(
                     alertsPanel(dashboard.notifications),
@@ -69,6 +77,24 @@ struct DashboardView {
         )
 
         return DOM.element("header", class: "app-header").appending(title, reports)
+    }
+
+    /// Switches between the expense list and the month calendar.
+    private func viewSwitcher() -> JSObject {
+        let group = DOM.element("div", class: "segmented")
+        for (view, label) in [
+            (MainView.list, UIString.viewList(language)),
+            (MainView.calendar, UIString.viewCalendar(language)),
+        ] {
+            let button = DOM.element(
+                "button", class: "segment \(state.view == view ? "active" : "")", text: label)
+            button.on("click") {
+                state.view = view
+                onRender()
+            }
+            group.appending(button)
+        }
+        return group
     }
 
     private func reportLink(_ label: String, path: String) -> JSObject {

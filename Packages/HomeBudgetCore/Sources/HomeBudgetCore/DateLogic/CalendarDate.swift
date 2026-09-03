@@ -76,6 +76,14 @@ public struct CalendarDate: Codable, Hashable, Comparable, Sendable {
         "\(year)-\(Self.pad(month))-\(Self.pad(day))"
     }
 
+    /// The current date, read from the platform clock.
+    ///
+    /// Every calculation takes the date as a parameter instead of reading the clock itself, so this
+    /// is only used at the edges — where the UI or a request needs to know what day it is.
+    public static func today() -> CalendarDate {
+        CalendarDate(julianDayNumber: PlatformClock.julianDayNumberToday())
+    }
+
     public static func < (lhs: CalendarDate, rhs: CalendarDate) -> Bool {
         (lhs.year, lhs.month, lhs.day) < (rhs.year, rhs.month, rhs.day)
     }

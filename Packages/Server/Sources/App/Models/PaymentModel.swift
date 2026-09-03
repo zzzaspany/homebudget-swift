@@ -78,8 +78,4 @@ extension CalendarDate {
         calendar.timeZone = TimeZone(identifier: "UTC")!
         return calendar.date(from: DateComponents(year: year, month: month, day: day)) ?? Date()
     }
-
-    static func today() -> CalendarDate {
-        CalendarDate(utc: Date())
-    }
 }

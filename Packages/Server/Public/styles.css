@@ -614,3 +614,123 @@ h2 {
   color: var(--text-faint);
   white-space: nowrap;
 }
+
+/* View switcher */
+
+.segmented {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin-bottom: 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+}
+.segment {
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  padding: 0.35rem 1rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.segment:hover {
+  color: var(--text);
+}
+.segment.active {
+  background: var(--primary);
+  color: #06111a;
+  font-weight: 600;
+}
+
+/* Calendar */
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.4rem;
+}
+.calendar-weekday {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  padding-bottom: 0.25rem;
+  text-align: center;
+}
+.calendar-cell {
+  min-height: 92px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: var(--input-bg);
+}
+.calendar-cell.blank {
+  background: transparent;
+  border-color: transparent;
+}
+.calendar-cell.today {
+  border-color: var(--primary);
+  background: var(--primary-bg);
+}
+.calendar-day {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.calendar-cell.today .calendar-day {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.calendar-chip {
+  border: none;
+  border-radius: 4px;
+  padding: 0.15rem 0.35rem;
+  font: inherit;
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: var(--transition);
+}
+.calendar-chip-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.calendar-chip:hover {
+  filter: brightness(1.25);
+}
+.calendar-chip.overdue {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.calendar-chip.due_soon {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+.calendar-chip.paid {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.calendar-chip.upcoming,
+.calendar-chip.inactive {
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+
+@media (max-width: 700px) {
+  .calendar-cell {
+    min-height: 64px;
+  }
+  .calendar-chip {
+    font-size: 0.7rem;
+  }
+}

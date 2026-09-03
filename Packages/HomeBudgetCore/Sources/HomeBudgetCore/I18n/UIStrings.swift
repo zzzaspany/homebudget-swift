@@ -15,6 +15,8 @@ public enum UIString: String, CaseIterable, Sendable {
     case sectionCategoryChart
     case sectionProjection
     case chartPeak
+    case viewList
+    case viewCalendar
 
     case columnName
     case columnAmount
@@ -80,6 +82,8 @@ public enum UIString: String, CaseIterable, Sendable {
         .sectionCategoryChart: "Podział na kategorie",
         .sectionProjection: "Prognoza 12 miesięcy",
         .chartPeak: "Szczyt",
+        .viewList: "Lista",
+        .viewCalendar: "Kalendarz",
 
         .columnName: "Nazwa",
         .columnAmount: "Kwota",
@@ -135,6 +139,8 @@ public enum UIString: String, CaseIterable, Sendable {
         .sectionCategoryChart: "Category breakdown",
         .sectionProjection: "12-month projection",
         .chartPeak: "Peak",
+        .viewList: "List",
+        .viewCalendar: "Calendar",
 
         .columnName: "Name",
         .columnAmount: "Amount",

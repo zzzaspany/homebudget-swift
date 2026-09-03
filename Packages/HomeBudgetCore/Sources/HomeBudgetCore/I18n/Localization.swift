@@ -12,6 +12,21 @@ public enum Localization {
         "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
     ]
 
+    static let monthNamesPL = [
+        "Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec",
+        "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień",
+    ]
+    static let monthNamesEN = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+    ]
+
+    /// The month written out, for a calendar heading.
+    public static func monthName(_ month: Int, language: Language) -> String {
+        guard (1...12).contains(month) else { return "" }
+        return (language == .pl ? monthNamesPL : monthNamesEN)[month - 1]
+    }
+
     public static func monthAbbreviation(_ month: Int, language: Language) -> String {
         guard (1...12).contains(month) else { return "" }
         return (language == .pl ? monthAbbreviationsPL : monthAbbreviationsEN)[month - 1]
