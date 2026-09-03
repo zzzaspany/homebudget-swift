@@ -12,6 +12,9 @@ public enum UIString: String, CaseIterable, Sendable {
     case sectionSinkingFunds
     case sectionCategoryBudgets
     case sectionPaymentHistory
+    case sectionCategoryChart
+    case sectionProjection
+    case chartPeak
 
     case columnName
     case columnAmount
@@ -74,6 +77,9 @@ public enum UIString: String, CaseIterable, Sendable {
         .sectionSinkingFunds: "Rezerwy na przyszłe opłaty",
         .sectionCategoryBudgets: "Budżety kategorii",
         .sectionPaymentHistory: "Historia wpłat",
+        .sectionCategoryChart: "Podział na kategorie",
+        .sectionProjection: "Prognoza 12 miesięcy",
+        .chartPeak: "Szczyt",
 
         .columnName: "Nazwa",
         .columnAmount: "Kwota",
@@ -126,6 +132,9 @@ public enum UIString: String, CaseIterable, Sendable {
         .sectionSinkingFunds: "Reserves for future bills",
         .sectionCategoryBudgets: "Category budgets",
         .sectionPaymentHistory: "Payment history",
+        .sectionCategoryChart: "Category breakdown",
+        .sectionProjection: "12-month projection",
+        .chartPeak: "Peak",
 
         .columnName: "Name",
         .columnAmount: "Amount",

@@ -28,10 +28,14 @@ struct DashboardView {
             DOM.element("div", class: "layout").appending(
                 DOM.element("div", class: "column").appending(
                     alertsPanel(dashboard.notifications),
+                    categoryChartPanel(dashboard.categoryBreakdown),
                     sinkingFundPanel(dashboard.sinkingFundItems),
                     categoryBudgetPanel()
                 ),
-                DOM.element("div", class: "column wide").appending(expensePanel())
+                DOM.element("div", class: "column wide").appending(
+                    expensePanel(),
+                    projectionPanel(dashboard.projection)
+                )
             ),
             paymentHistoryPanel()
         )
@@ -126,6 +130,18 @@ struct DashboardView {
 
         // The e-mail alert button arrives with the notification endpoint in Phase 4.
         return panel.appending(rows)
+    }
+
+    // MARK: - Charts
+
+    private func categoryChartPanel(_ shares: [Dashboard.CategoryShare]) -> JSObject {
+        card(title: .sectionCategoryChart)
+            .appending(Charts.doughnut(shares, language: language))
+    }
+
+    private func projectionPanel(_ entries: [Dashboard.ProjectionEntry]) -> JSObject {
+        card(title: .sectionProjection)
+            .appending(Charts.projection(entries, language: language))
     }
 
     // MARK: - Sinking funds
