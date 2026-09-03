@@ -8,17 +8,18 @@ ContainerName=homebudget-swift
 Image=ghcr.io/zzzaspany/homebudget-swift:latest
 AutoUpdate=registry
 
-# The Python app holds 8000 until the switchover, so the two run side by side.
-PublishPort=8010:8000
+# Takes over port 8000 from the Python app it replaces, so the Nginx Proxy Manager entry for
+# app.example.lab — and the Authelia check in front of it — need no change.
+PublishPort=8000:8000
 
 Volume=homebudget-swift-uploads:/app/data/uploads
 
 EnvironmentFile=%h/.config/containers/systemd/homebudget-swift.env
 
-# Fluent refuses to start against a schema it has not migrated.
-ExecStartPre=/usr/bin/podman run --rm --env-file %h/.config/containers/systemd/homebudget-swift.env ghcr.io/zzzaspany/homebudget-swift:latest migrate --yes
-
 [Service]
+# Migrations run before the container starts. This belongs to [Service], not [Container] — the
+# Quadlet generator rejects the whole unit if it appears above.
+ExecStartPre=/usr/bin/podman run --rm --env-file %h/.config/containers/systemd/homebudget-swift.env ghcr.io/zzzaspany/homebudget-swift:latest migrate --yes
 Restart=always
 RestartSec=5
 
