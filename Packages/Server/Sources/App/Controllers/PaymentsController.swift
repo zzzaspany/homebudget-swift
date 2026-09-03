@@ -15,19 +15,7 @@ struct PaymentsController: RouteCollection {
             .sort(\.$createdAt, .descending)
             .all()
 
-        return try payments.map { payment in
-            PaymentRecord(
-                id: try payment.requireID().uuidString,
-                expenseID: payment.$expense.id.uuidString,
-                expenseName: payment.expense.name,
-                category: payment.expense.category,
-                amountPaid: payment.amountPaid,
-                datePaid: CalendarDate(utc: payment.datePaid),
-                period: payment.period,
-                paidBy: payment.paidBy,
-                hasInvoice: payment.invoiceStoragePath != nil
-            )
-        }
+        return try payments.map { try $0.record() }
     }
 
     func invoice(request: Request) async throws -> Response {

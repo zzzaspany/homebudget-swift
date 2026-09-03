@@ -36,6 +36,21 @@ final class PaymentModel: Model, @unchecked Sendable {
         self.invoiceSizeBytes = invoiceSizeBytes
     }
 
+    /// Requires the `expense` relation to be loaded.
+    func record() throws -> PaymentRecord {
+        PaymentRecord(
+            id: try requireID().uuidString,
+            expenseID: $expense.id.uuidString,
+            expenseName: expense.name,
+            category: expense.category,
+            amountPaid: amountPaid,
+            datePaid: CalendarDate(utc: datePaid),
+            period: period,
+            paidBy: paidBy,
+            hasInvoice: invoiceStoragePath != nil
+        )
+    }
+
     var domain: Payment {
         Payment(
             id: id?.uuidString ?? "",

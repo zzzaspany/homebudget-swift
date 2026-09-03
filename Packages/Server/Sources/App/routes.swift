@@ -20,4 +20,5 @@ func routes(_ app: Application) throws {
 
     try authenticated.register(collection: ExpensesController())
     try authenticated.register(collection: PaymentsController())
+    try authenticated.register(collection: ReportsController())
 }
