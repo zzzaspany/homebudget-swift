@@ -9,9 +9,9 @@ import VaporTesting
 struct AuthAndAssetTests {
     private func withServer(devMode: Bool, _ body: (Application) async throws -> Void) async throws {
         let app = try await Application.make(.testing)
-        setenv("DEV_MODE", devMode ? "true" : "false", 1)
         do {
             try await configure(app)
+            app.devMode = devMode
             try await body(app)
         } catch {
             try await app.asyncShutdown()

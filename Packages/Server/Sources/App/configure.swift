@@ -4,6 +4,7 @@ import Leaf
 import Vapor
 
 public func configure(_ app: Application) async throws {
+    app.devMode = Environment.get("DEV_MODE")?.lowercased() == "true"
     app.databases.use(.postgres(configuration: try postgresConfiguration()), as: .psql)
 
     app.migrations.add(CreateFrequencyEnum())

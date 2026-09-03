@@ -11,7 +11,7 @@ func routes(_ app: Application) throws {
                 "userName": user.name,
                 "userEmail": user.email,
                 "userInitial": String(user.name.prefix(1)).uppercased(),
-                "devMode": Environment.get("DEV_MODE")?.lowercased() == "true" ? "true" : "",
+                "devMode": request.devMode ? "true" : "",
             ]
         )
     }
