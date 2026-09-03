@@ -37,22 +37,41 @@ File exists`), and dependency checkouts crawl. Every target therefore passes `--
 and keeps its build directory in `~/Library/Caches/homebudget-swift`. A clone on local disk can drop
 both and use plain `swift build` / `swift test`.
 
-Running the tests needs XCTest, which the Command Line Tools alone do not ship — install Xcode or a
-swift.org toolchain. Alternatively run them on the deployment platform:
+### Toolchains
 
-```bash
-docker run --rm -v "$PWD:/src" -w /src/Packages/HomeBudgetCore swift:6.1 swift test
-```
+Two are needed, for different targets:
+
+| Target | Toolchain | Why |
+| --- | --- | --- |
+| macOS build + tests | Xcode | XCTest and Swift Testing do not ship with the Command Line Tools |
+| WebAssembly | swift.org toolchain + `swift sdk install …_wasm` | Apple's clang has no WebAssembly target, so JavaScriptKit's C target cannot build under Xcode's toolchain |
+
+The Makefile points `DEVELOPER_DIR` at Xcode so no `sudo xcode-select --switch` is needed.
 
 ## Running locally
 
-Needs a PostgreSQL instance. Copy `.env.example` to `.env` and point `DATABASE_URL` at it;
-`DEV_MODE=true` substitutes a local user so no reverse proxy is required.
+Copy `.env.example` to `.env` and point `DATABASE_URL` at a PostgreSQL instance. `DEV_MODE=true`
+substitutes a local user, so no reverse proxy is required.
+
+```bash
+cd Packages/Server && swift run App migrate --yes
+make run
+```
+
+The homelab instance runs in Proxmox container 120 (`db-host`, PostgreSQL 17). Its cluster was
+recreated with `pl_PL.UTF-8` — Debian's default install produced a `SQL_ASCII` cluster, which breaks
+sorting and comparison of Polish text. Credentials live in `.env`, which is never committed.
+
+## Web client
+
+The client is plain Swift compiled to WebAssembly, talking to the DOM through JavaScriptKit.
+[Tokamak](https://github.com/TokamakUI/Tokamak) — the SwiftUI-shaped framework that would have been
+the closer fit — was archived in January 2026 and targets Swift 5.6, so it was ruled out.
 
 ## Status
 
 - [x] Phase 1 — domain logic (status, proration, projections, price history, i18n) + tests
-- [x] Phase 2 — Vapor API + PostgreSQL — builds and serves; CRUD paths still need a live database run
+- [x] Phase 2 — Vapor API + PostgreSQL — verified end to end against the homelab database
 - [ ] Phase 3 — web client
 - [ ] Phase 4 — CSV/PDF reports, e-mail alerts (CSV export done in `HomeBudgetCore`)
 - [ ] Phase 5 — container/Quadlet deployment
