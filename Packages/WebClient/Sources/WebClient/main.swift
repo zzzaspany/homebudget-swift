@@ -6,17 +6,16 @@ import JavaScriptKit
 // the last one matters because category budget thresholds are stored per browser.
 
 let document = JSObject.global.document
-let root = document.getElementById("app")
 
-func text(_ value: String) -> JSValue {
-    let node = document.createTextNode!(value)
-    return node
+@MainActor
+func makeElement(_ tag: String) -> JSObject {
+    document.createElement(tag).object!
 }
 
-func element(_ tag: String, _ className: String? = nil) -> JSValue {
-    var node = document.createElement!(tag)
-    if let className { node.className = .string(className) }
-    return node
+@MainActor
+func append(_ parent: JSObject, text value: String) {
+    let node = document.createTextNode(value).object!
+    _ = parent.appendChild!(node)
 }
 
 // 1. Domain logic running inside the browser.
@@ -36,26 +35,30 @@ let dashboard = DashboardBuilder.build(expenses: expenses, today: today)
 
 // 2. localStorage round-trip.
 let storage = JSObject.global.localStorage
-_ = storage.setItem!("homebudget.spike", "ok")
-let storedValue = storage.getItem!("homebudget.spike").string ?? "missing"
+_ = storage.setItem("homebudget.spike", "ok")
+let storedValue = storage.getItem("homebudget.spike").string ?? "missing"
 
 // 3. Render through the DOM.
-var heading = element("h1")
-_ = heading.appendChild!(text("HomeBudget — spike"))
+let root = document.getElementById("app").object ?? document.body.object!
+
+let heading = makeElement("h1")
+append(heading, text: "HomeBudget — spike")
 _ = root.appendChild!(heading)
 
-var list = element("ul")
+let list = makeElement("ul")
 let lines = [
     "Budżet miesięczny: \(NumberFormatting.currency(dashboard.kpis.proRatedMonthly, language: .pl))",
     "Rezerwa (sinking fund): \(NumberFormatting.currency(dashboard.kpis.sinkingFundTotal, language: .pl))",
     "Pozycje rezerwy: \(dashboard.sinkingFundItems.count)",
-    "Prognoza na \(Localization.projectionLabel(year: dashboard.projection[0].year, month: dashboard.projection[0].month, language: .pl)): "
-        + NumberFormatting.currency(dashboard.projection[0].amount, language: .pl),
+    "Prognoza na "
+        + Localization.projectionLabel(
+            year: dashboard.projection[0].year, month: dashboard.projection[0].month, language: .pl)
+        + ": " + NumberFormatting.currency(dashboard.projection[0].amount, language: .pl),
     "localStorage: \(storedValue)",
 ]
 for line in lines {
-    var item = element("li")
-    _ = item.appendChild!(text(line))
+    let item = makeElement("li")
+    append(item, text: line)
     _ = list.appendChild!(item)
 }
 _ = root.appendChild!(list)

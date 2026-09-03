@@ -6,3 +6,4 @@ Packages/*/.swiftpm/
 *.xcodeproj
 .env
 data/
+Packages/*/Package.resolved.bak

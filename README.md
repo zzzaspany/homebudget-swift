@@ -58,9 +58,16 @@ cd Packages/Server && swift run App migrate --yes
 make run
 ```
 
-The homelab instance runs in Proxmox container 120 (`db-host`, PostgreSQL 17). Its cluster was
-recreated with `pl_PL.UTF-8` — Debian's default install produced a `SQL_ASCII` cluster, which breaks
-sorting and comparison of Polish text. Credentials live in `.env`, which is never committed.
+The homelab instance is `db-host` — Proxmox container 120 (`db-host`,
+PostgreSQL 17). Its cluster was recreated with `pl_PL.UTF-8`, because Debian's default install
+produced a `SQL_ASCII` cluster, which breaks sorting and comparison of Polish text.
+
+That hostname resolves straight to the container, unlike the rest of `*.example.lab`, which a
+Pi-hole wildcard sends to Nginx Proxy Manager. A database speaks raw TCP, so an HTTP reverse proxy
+has nothing to contribute; the more specific `98-homebudget.conf` record wins over the wildcard.
+Connections currently run without TLS, matching every other internal service here.
+
+Credentials live in `.env`, which is never committed.
 
 ## Web client
 
