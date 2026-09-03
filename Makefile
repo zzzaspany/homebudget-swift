@@ -111,20 +111,26 @@ shell: ## Open a shell inside the image, to inspect what shipped
 	$(CONTAINER) run --rm --interactive --tty --entrypoint /bin/bash $(IMAGE):$(TAG)
 
 # --- Database ----------------------------------------------------------------
+#
+# These run the client out of the Postgres image rather than expecting psql on the machine, so they
+# work wherever the container runtime does and always match the server's major version.
+PSQL_IMAGE := docker.io/library/postgres:17-alpine
 
 db-psql: ## Open psql against the configured database
-	@$(with_env) psql "$$DATABASE_URL"
+	@$(with_env) $(CONTAINER) run --rm --interactive --tty $(PSQL_IMAGE) psql "$$DATABASE_URL"
 
 db-backup: ## Dump the database to backups/ with a timestamp
-	@$(with_env) mkdir -p backups && \
-		pg_dump "$$DATABASE_URL" > backups/homebudget-$$(date +%Y%m%d-%H%M%S).sql && \
-		echo "Wrote backups/homebudget-$$(date +%Y%m%d-%H%M%S).sql"
+	@$(with_env) mkdir -p backups && stamp=$$(date +%Y%m%d-%H%M%S) && \
+		$(CONTAINER) run --rm $(PSQL_IMAGE) pg_dump "$$DATABASE_URL" > backups/homebudget-$$stamp.sql && \
+		echo "Wrote backups/homebudget-$$stamp.sql ($$(wc -c < backups/homebudget-$$stamp.sql) bytes)"
 
 db-reset: ## Delete every expense and payment. Asks first.
 	@$(with_env) printf 'Delete all expenses and payments? [y/N] ' && read answer && \
 		[ "$$answer" = "y" ] && \
-		psql "$$DATABASE_URL" -c 'TRUNCATE payments, expenses CASCADE;' && \
+		$(CONTAINER) run --rm $(PSQL_IMAGE) psql "$$DATABASE_URL" \
+			-c 'TRUNCATE payments, expenses CASCADE;' && \
 		echo "Cleared." || echo "Left alone."
+
 
 # --- Housekeeping ------------------------------------------------------------
 
