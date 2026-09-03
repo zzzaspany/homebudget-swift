@@ -99,16 +99,15 @@ make migrate
 make run
 ```
 
-The homelab instance is `db-host` — Proxmox container 120 (`db-host`,
-PostgreSQL 17). Its cluster was recreated with `pl_PL.UTF-8`, because Debian's default install
-produced a `SQL_ASCII` cluster, which breaks sorting and comparison of Polish text.
+One thing worth copying if you set this up yourself: create the cluster with a UTF-8 encoding and
+a collation matching your language. A default Debian install produces a `SQL_ASCII` cluster, which
+stores accented text but sorts and compares it wrongly, and breaks `upper`/`lower` on any accented
+letter. The setting only applies when the data directory is first initialised.
 
-That hostname resolves straight to the container, unlike the rest of `*.example.lab`, which a
-Pi-hole wildcard sends to Nginx Proxy Manager. A database speaks raw TCP, so an HTTP reverse proxy
-has nothing to contribute; the more specific `98-homebudget.conf` record wins over the wildcard.
-Connections currently run without TLS, matching every other internal service here.
+Give the database its own hostname resolving straight to it. It speaks raw TCP, so an HTTP reverse
+proxy has nothing to contribute.
 
-Credentials live in `.env`, which is never committed.
+Credentials live in `.env`, which is never committed, and in a secret manager for deployments.
 
 ## Web client
 

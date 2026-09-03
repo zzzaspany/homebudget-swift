@@ -5,7 +5,7 @@ Reads the Python app's own API rather than PocketBase directly, so the export is
 app considers its state, and writes SQL to stdout instead of touching the database, so the
 statements can be read before they are applied.
 
-    ./migrate-from-pocketbase.py --source http://build-host:8000 --user konrad > migration.sql
+    ./migrate-from-pocketbase.py --source http://old-app:8000 --user you > migration.sql
 
 The period markers ("last_paid_period") are copied verbatim, which is only safe because the source
 data holds none of the frequencies the Python app recorded wrongly. The script refuses to run if it
@@ -39,7 +39,7 @@ def sql_string(value):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", required=True, help="base URL of the Python app")
-    parser.add_argument("--user", default="konrad", help="value for the X-Forwarded-User header")
+    parser.add_argument("--user", default="admin", help="value for the X-Forwarded-User header")
     parser.add_argument(
         "--allow-unsafe-periods",
         action="store_true",

@@ -8,8 +8,8 @@ ContainerName=homebudget-swift
 Image=ghcr.io/zzzaspany/homebudget-swift:latest
 AutoUpdate=registry
 
-# Takes over port 8000 from the Python app it replaces, so the Nginx Proxy Manager entry for
-# app.example.lab — and the Authelia check in front of it — need no change.
+# Takes over the port used by the app it replaces, so the reverse-proxy entry and the
+# authentication check in front of it need no change.
 PublishPort=8000:8000
 
 Volume=homebudget-swift-uploads:/app/data/uploads
