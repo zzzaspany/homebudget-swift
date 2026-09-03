@@ -47,8 +47,8 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 16px;
+  line-height: 1.55;
   transition: var(--transition);
 }
 
@@ -58,10 +58,10 @@ h2 {
   font-weight: 600;
 }
 h1 {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
 }
 h2 {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   letter-spacing: 0.01em;
 }
 
@@ -69,7 +69,7 @@ h2 {
   color: var(--text-muted);
 }
 .small {
-  font-size: 0.82rem;
+  font-size: 0.875rem;
 }
 .grow {
   flex: 1;
@@ -108,7 +108,7 @@ h2 {
   background: var(--card-bg);
   color: var(--text-muted);
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   text-decoration: none;
   cursor: pointer;
   transition: var(--transition);
@@ -124,7 +124,7 @@ h2 {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-lg);
-  padding: 1rem 1.1rem;
+  padding: 1.15rem 1.25rem;
   margin-bottom: 1rem;
 }
 
@@ -140,7 +140,7 @@ h2 {
   color: var(--danger);
   border-radius: 999px;
   padding: 0.05rem 0.5rem;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
@@ -159,10 +159,10 @@ h2 {
 }
 .kpi-label {
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
 }
 .kpi-value {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: 600;
 }
 .kpi-primary {
@@ -278,7 +278,7 @@ h2 {
   border: 1px solid var(--card-border);
   border-radius: var(--radius-md);
   color: var(--text);
-  padding: 0.45rem 0.6rem;
+  padding: 0.5rem 0.7rem;
   font: inherit;
   transition: var(--transition);
 }
@@ -345,16 +345,16 @@ h2 {
 }
 .table th {
   text-align: left;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-faint);
-  padding: 0.4rem 0.6rem;
+  padding: 0.5rem 0.65rem;
   border-bottom: 1px solid var(--card-border);
 }
 .table td {
-  padding: 0.55rem 0.6rem;
+  padding: 0.7rem 0.65rem;
   border-bottom: 1px solid var(--card-border);
   vertical-align: middle;
 }
@@ -376,9 +376,9 @@ h2 {
 
 .badge {
   display: inline-block;
-  padding: 0.15rem 0.55rem;
+  padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 .badge.paid {
@@ -471,10 +471,10 @@ h2 {
 }
 .form-label {
   color: var(--text-muted);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
 }
 .change {
-  font-size: 1.6rem;
+  font-size: 1.9rem;
   font-weight: 600;
   margin: 0 0 0.6rem;
 }
