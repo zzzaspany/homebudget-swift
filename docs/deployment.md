@@ -15,20 +15,41 @@ The app is meant to sit behind Authelia, which supplies the signed-in user throu
 It performs no authentication of its own, so **anything that can reach port 8000 is treated as
 signed in** — the port must not be exposed beyond the reverse proxy.
 
+## Secrets
+
+Fetched from Infisical at start-up rather than kept in a file. `homebudget-swift-secrets.service`
+runs before the container and writes them into the user's runtime directory, which is tmpfs — the
+values exist only while the machine is up and never reach persistent storage.
+
+What does live on disk is one credential: a machine identity scoped to read a single environment,
+in `infisical.env`. Losing that file exposes far less than the secrets it fetches, and it can be
+revoked without touching anything else.
+
+The instance sits behind an internal CA the host does not trust. Verification is not disabled —
+this connection carries every secret — so the expected certificate is pinned as the trust anchor in
+`vault-ca.pem`. Replace it when the certificate is renewed, or better, install the root CA into the
+system trust store and drop the `--cacert` argument.
+
 ## First install
 
 ```bash
 mkdir -p ~/.config/containers/systemd
 cp deploy/homebudget.network deploy/*.container ~/.config/containers/systemd/
 
-cp deploy/homebudget.env.example ~/.config/containers/systemd/homebudget.env
-cp deploy/homebudget-postgres.env.example ~/.config/containers/systemd/homebudget-postgres.env
-# Set the password in both files — they have to match.
-chmod 600 ~/.config/containers/systemd/*.env
+cp deploy/infisical.env.example ~/.config/containers/systemd/infisical.env
+# Fill in the machine identity's client id and secret, and the project id.
+chmod 600 ~/.config/containers/systemd/infisical.env
+
+install -m 755 deploy/provision-secrets.sh ~/.local/bin/
+cp deploy/homebudget-swift-secrets.service ~/.config/systemd/user/
+
+# Pin the certificate the Infisical instance presents.
+openssl s_client -connect vault.example.lab:443 -servername vault.example.lab </dev/null 2>/dev/null \
+  | openssl x509 -outform pem > ~/.config/containers/systemd/vault-ca.pem
 
 systemctl --user daemon-reload
-systemctl --user start homebudget-postgres.service
-systemctl --user start homebudget.service
+systemctl --user enable homebudget-swift-secrets.service
+systemctl --user start homebudget-swift.service
 ```
 
 Migrations run before the app starts, from `ExecStartPre` in the unit, so a deploy that adds a

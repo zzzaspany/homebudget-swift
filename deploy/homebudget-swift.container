@@ -1,6 +1,11 @@
 [Unit]
 Description=HomeBudget (Swift rewrite, rootless Quadlet)
 After=network-online.target
+# Secrets are fetched into the runtime directory before this starts, rather than kept in a file
+# on disk. A separate unit rather than an ExecStartPre, so the environment file is guaranteed to
+# exist by the time systemd reads it.
+Requires=homebudget-swift-secrets.service
+After=homebudget-swift-secrets.service
 
 [Container]
 ContainerName=homebudget-swift
@@ -14,12 +19,12 @@ PublishPort=8000:8000
 
 Volume=homebudget-swift-uploads:/app/data/uploads
 
-EnvironmentFile=%h/.config/containers/systemd/homebudget-swift.env
+EnvironmentFile=%t/homebudget-swift.env
 
 [Service]
 # Migrations run before the container starts. This belongs to [Service], not [Container] — the
 # Quadlet generator rejects the whole unit if it appears above.
-ExecStartPre=/usr/bin/podman run --rm --env-file %h/.config/containers/systemd/homebudget-swift.env ghcr.io/zzzaspany/homebudget-swift:latest migrate --yes
+ExecStartPre=/usr/bin/podman run --rm --env-file %t/homebudget-swift.env ghcr.io/zzzaspany/homebudget-swift:latest migrate --yes
 Restart=always
 RestartSec=5
 
