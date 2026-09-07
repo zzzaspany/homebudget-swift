@@ -9,9 +9,12 @@ import WebKit
 struct LoginWebView: UIViewRepresentable {
     let session: AutheliaSession
     let onSignedIn: () -> Void
+    /// Called when the page cannot load at all. Without it the sheet sits there blank: the failure
+    /// is recorded on the session, but the message is on the screen behind this one.
+    let onFailure: () -> Void
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(session: session, onSignedIn: onSignedIn)
+        Coordinator(session: session, onSignedIn: onSignedIn, onFailure: onFailure)
     }
 
     func makeUIView(context: Context) -> WKWebView {
@@ -30,10 +33,15 @@ struct LoginWebView: UIViewRepresentable {
     final class Coordinator: NSObject, WKNavigationDelegate {
         private let session: AutheliaSession
         private let onSignedIn: () -> Void
+        private let onFailure: () -> Void
 
-        init(session: AutheliaSession, onSignedIn: @escaping () -> Void) {
+        init(
+            session: AutheliaSession, onSignedIn: @escaping () -> Void,
+            onFailure: @escaping () -> Void
+        ) {
             self.session = session
             self.onSignedIn = onSignedIn
+            self.onFailure = onFailure
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -57,6 +65,7 @@ struct LoginWebView: UIViewRepresentable {
             // A certificate the device does not trust surfaces here, which is the likeliest
             // failure on a network using its own certificate authority.
             session.report(error)
+            onFailure()
         }
     }
 }

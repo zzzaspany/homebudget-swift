@@ -33,11 +33,14 @@ prompt extends it to a month.
 ## The certificate
 
 The server sits behind an internal certificate authority. A device that does not trust it cannot
-sign in, and the app says so rather than failing obscurely. On a simulator:
+sign in — the web view fails with `NSURLErrorServerCertificateUntrusted` — and the app says so, in
+terms that name the fix, rather than sitting on a blank page.
 
-```bash
-xcrun simctl keychain booted add-root-cert officelab-ca.pem
-```
+On a real device: install the CA through a configuration profile, then enable it under
+Settings → General → About → Certificate Trust Settings. iOS keeps user-installed roots untrusted
+until that switch is thrown, which is a separate step from installing them.
 
-On a real device, install the CA through a configuration profile and enable full trust in
-Settings → General → About → Certificate Trust Settings.
+On a simulator this is more awkward than it should be. `xcrun simctl keychain <device>
+add-root-cert` reports success and writes nothing — the trust store stays zero bytes, on Xcode 26
+and both booted and shut down. Until that is fixed, signing in has to be exercised on a device, or
+against a server whose certificate the simulator already trusts.

@@ -54,7 +54,10 @@ struct RootView: View {
         }
         .sheet(isPresented: $showingLogin) {
             NavigationStack {
-                LoginWebView(session: session) { showingLogin = false }
+                LoginWebView(
+                    session: session,
+                    onSignedIn: { showingLogin = false },
+                    onFailure: { showingLogin = false })
                     .ignoresSafeArea(edges: .bottom)
                     .navigationTitle("Logowanie")
                     .navigationBarTitleDisplayMode(.inline)

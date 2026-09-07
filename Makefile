@@ -33,6 +33,12 @@ BUILD_DIR ?= ~/build/homebudget-swift
 # Apple's container runs OCI images natively on Apple silicon; override for Docker or Podman.
 CONTAINER ?= container
 
+# The iOS app. Its Xcode project is generated from project.yml rather than committed, so it has to
+# be built before anything can open or compile it.
+IOS_DIR := Packages/HomeBudgetiOS
+IOS_SIMULATOR ?= iPhone 17 Pro
+IOS_BUNDLE_ID := lab.office.homebudget
+
 # Loads .env for targets that need database credentials.
 define with_env
 set -a; [ -f .env ] && . ./.env; set +a;
@@ -40,7 +46,8 @@ endef
 
 .DEFAULT_GOAL := help
 .PHONY: help build core server web test test-core test-server run migrate revert \
-        image image-run image-push image-remote image-remote-push shell db-psql db-backup db-reset lint clean clean-all doctor
+        image image-run image-push image-remote image-remote-push shell db-psql db-backup db-reset \
+        ios ios-open ios-build ios-run lint clean clean-all doctor
 
 # --- Help --------------------------------------------------------------------
 
@@ -67,6 +74,30 @@ web: ## Compile the client to WebAssembly, into the server's public directory
 		swift package --swift-sdk $(WASM_SDK) --scratch-path $(SCRATCH)/web \
 		--allow-writing-to-package-directory js -c release \
 		--output ../Server/Public/app
+
+# --- iOS ---------------------------------------------------------------------
+#
+# SwiftPM cannot produce an app bundle — no Info.plist, signing or resources — so an Xcode project
+# is still required. It is generated from project.yml so that changes read as diffs rather than as
+# churn in a .pbxproj, which means regenerating after editing that file.
+
+ios: ## Generate the Xcode project from project.yml
+	cd $(IOS_DIR) && xcodegen generate
+
+ios-open: ios ## Generate and open in Xcode
+	open $(IOS_DIR)/HomeBudget.xcodeproj
+
+ios-build: ios ## Build the app for the simulator
+	cd $(IOS_DIR) && xcodebuild -project HomeBudget.xcodeproj -scheme HomeBudget \
+		-destination 'platform=iOS Simulator,name=$(IOS_SIMULATOR)' \
+		-derivedDataPath $(SCRATCH)/ios build
+
+ios-run: ios-build ## Build, install and launch on the simulator
+	@xcrun simctl boot "$(IOS_SIMULATOR)" 2>/dev/null || true
+	@open -a Simulator
+	@app=$$(find $(SCRATCH)/ios -name HomeBudget.app -path '*Debug-iphonesimulator*' | head -1); \
+		xcrun simctl install "$(IOS_SIMULATOR)" "$$app" && \
+		xcrun simctl launch "$(IOS_SIMULATOR)" $(IOS_BUNDLE_ID)
 
 # --- Testing -----------------------------------------------------------------
 
@@ -173,6 +204,10 @@ doctor: ## Check that the toolchains and services this project needs are present
 	@echo "WebAssembly SDK"
 	@. $(SWIFTLY_ENV) 2>/dev/null && swift sdk list 2>/dev/null | grep -q $(WASM_SDK) \
 		&& echo "  ok    $(WASM_SDK)" || echo "  MISSING — see docs/deployment.md"
+	@echo "xcodegen (iOS project)"
+	@command -v xcodegen >/dev/null 2>&1 \
+		&& echo "  ok    $$(xcodegen --version 2>&1 | head -1)" \
+		|| echo "  MISSING — brew install xcodegen"
 	@echo "Container runtime"
 	@command -v $(CONTAINER) >/dev/null 2>&1 \
 		&& echo "  ok    $$($(CONTAINER) --version 2>&1 | head -1)" \
