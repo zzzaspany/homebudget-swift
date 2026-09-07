@@ -12,11 +12,10 @@
 set -euo pipefail
 
 CONFIG="${INFISICAL_CONFIG:-$HOME/.config/containers/systemd/infisical.env}"
-# The instance is behind an internal CA that the host does not trust. Rather than turning
-# verification off — this connection carries every secret, so anyone on the network could collect
-# them — the expected certificate is pinned as the trust anchor. Replace this file when the
-# certificate is renewed; better still, install the OfficeLab root CA into the system trust store
-# and drop CA_BUNDLE entirely.
+# The instance is behind an internal CA the host does not trust. Verification is not turned off —
+# this request carries every secret the deployment has — so the internal root CA is supplied as the
+# trust anchor instead. Being the root rather than the leaf, it keeps working when the server
+# certificate is renewed. Installing it into the system trust store would let CA_BUNDLE go away.
 CA_BUNDLE="${INFISICAL_CA_BUNDLE:-$HOME/.config/containers/systemd/vault-ca.pem}"
 OUTPUT="${SECRETS_OUTPUT:-${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/homebudget-swift.env}"
 

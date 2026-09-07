@@ -1,0 +1,49 @@
+# The Xcode project is generated from this file rather than committed, so changes show up as
+# readable diffs instead of a churning .pbxproj. Run `xcodegen` in this directory after editing.
+name: HomeBudget
+options:
+  bundleIdPrefix: lab.office.homebudget
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+packages:
+  HomeBudgetCore:
+    path: ../HomeBudgetCore
+
+targets:
+  HomeBudget:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    dependencies:
+      - package: HomeBudgetCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: lab.office.homebudget
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"   # iPhone and iPad
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: >-
+          UIInterfaceOrientationPortrait
+          UIInterfaceOrientationLandscapeLeft
+          UIInterfaceOrientationLandscapeRight
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: >-
+          UIInterfaceOrientationPortrait
+          UIInterfaceOrientationPortraitUpsideDown
+          UIInterfaceOrientationLandscapeLeft
+          UIInterfaceOrientationLandscapeRight
+        INFOPLIST_KEY_CFBundleDisplayName: HomeBudget
+    info:
+      path: Sources/Info.plist
+      properties:
+        # Without this the app runs letterboxed, in the compatibility mode iOS uses for apps that
+        # predate modern screen sizes. The build setting equivalent does not apply when the
+        # Info.plist is supplied rather than generated.
+        UILaunchScreen: {}
+        # The server is on a private network behind an internal CA, so the app talks to it over
+        # the local domain rather than the public internet.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
