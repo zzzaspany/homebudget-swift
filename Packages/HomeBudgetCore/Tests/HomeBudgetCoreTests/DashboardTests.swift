@@ -236,3 +236,62 @@ struct CategoryBudgetTests {
         #expect(budgets[1].limit == nil)
     }
 }
+
+@Suite("Due reminders")
+struct DueReminderTests {
+    private let today = CalendarDate(year: 2026, month: 9, day: 8)
+
+    private func expense(
+        _ id: String, day: Int, frequency: Frequency = .monthly, month: Int? = nil,
+        paidPeriod: String = "", active: Bool = true
+    ) -> Expense {
+        Expense(
+            id: id, name: "Expense \(id)", amount: 100, frequency: frequency, dueDay: day,
+            dueMonth: month, category: "Inne", lastPaidPeriod: paidPeriod, active: active)
+    }
+
+    @Test("The lead time is the cycle's own due-soon threshold")
+    func leadTime() {
+        // Monthly warns 5 days out, yearly 14.
+        let dashboard = DashboardBuilder.build(
+            expenses: [expense("m", day: 25),
+                       expense("y", day: 25, frequency: .yearly, month: 12)],
+            today: today)
+        let byID = Dictionary(
+            uniqueKeysWithValues: dashboard.dueReminders(after: today, limit: 10)
+                .map { ($0.expenseID, $0) })
+
+        #expect(byID["m"]?.daysBefore == 5)
+        #expect(byID["m"]?.fireDate == CalendarDate(year: 2026, month: 9, day: 20))
+        #expect(byID["y"]?.daysBefore == 14)
+        #expect(byID["y"]?.fireDate == CalendarDate(year: 2026, month: 12, day: 11))
+    }
+
+    @Test("A warning day already past is not scheduled")
+    func noPastWarnings() {
+        // Due on the 10th, monthly, so the warning day was the 5th — three days ago.
+        let dashboard = DashboardBuilder.build(expenses: [expense("late", day: 10)], today: today)
+        #expect(dashboard.dueReminders(after: today, limit: 10).isEmpty)
+    }
+
+    @Test("Paid and inactive bills raise nothing")
+    func excluded() {
+        let dashboard = DashboardBuilder.build(
+            expenses: [expense("open", day: 25),
+                       expense("paid", day: 26, paidPeriod: "2026-09"),
+                       expense("off", day: 27, active: false)],
+            today: today)
+        #expect(dashboard.dueReminders(after: today, limit: 10).map(\.expenseID) == ["open"])
+    }
+
+    @Test("Soonest first, and the limit is honoured")
+    func orderingAndLimit() {
+        let dashboard = DashboardBuilder.build(
+            expenses: [expense("c", day: 28), expense("a", day: 20), expense("b", day: 24)],
+            today: today)
+
+        #expect(dashboard.dueReminders(after: today, limit: 10).map(\.expenseID) == ["a", "b", "c"])
+        #expect(dashboard.dueReminders(after: today, limit: 2).map(\.expenseID) == ["a", "b"])
+        #expect(dashboard.dueReminders(after: today, limit: 0).isEmpty)
+    }
+}

@@ -47,14 +47,16 @@ final class DashboardModel {
     ///
     /// In develop mode the change is applied to the sample data instead, so the form can be worked
     /// on without a server or a sign-in behind it.
-    /// Hands the widget a fresh snapshot and asks the system to redraw it.
+    /// Pushes everything derived from the dashboard back out: the widget's snapshot and the
+    /// scheduled warnings.
     ///
-    /// Called on every path that changes the dashboard, so the tile never lags behind the screen
-    /// the user just looked at.
+    /// Called on every path that changes the dashboard, so neither the tile nor the notifications
+    /// lag behind the screen the user just looked at.
     private func publishToWidget() {
         guard let dashboard else { return }
         SharedStore.write(UpcomingSnapshot.from(dashboard))
         WidgetCenter.shared.reloadAllTimelines()
+        Task { await DueNotifications.reschedule(from: dashboard, language: .device) }
     }
 
     func save(_ input: ExpenseInput, editing id: String?) async {
