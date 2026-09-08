@@ -29,6 +29,12 @@
             ProcessInfo.processInfo.environment["DEVELOP_TAB"]
         }
 
+        /// Opens a sheet on launch, for screens that are otherwise several taps in.
+        /// `DEVELOP_SHEET=history`.
+        static var initialSheet: String? {
+            ProcessInfo.processInfo.environment["DEVELOP_SHEET"]
+        }
+
         /// A household that exercises every branch worth looking at: overdue, due soon, paid, a
         /// variable bill, and cycles from fortnightly to yearly.
         static let today = CalendarDate.today()

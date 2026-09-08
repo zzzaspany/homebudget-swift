@@ -59,7 +59,7 @@ struct PriceHistoryScreen: View {
         let colour: Color = change > 0 ? .red : (change < 0 ? .green : .secondary)
 
         return HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text("\(change > 0 ? "+" : "")\(NumberFormatting.plain(change))%")
+            Text("\(change > 0 ? "+" : "")\(NumberFormatting.trimmed(change, language: language))%")
                 .font(.system(size: 40, weight: .bold, design: .rounded))
                 .foregroundStyle(colour)
                 .contentTransition(.numericText())
@@ -76,7 +76,19 @@ struct PriceHistoryScreen: View {
     }
 
     private func chart(_ history: PriceHistory) -> some View {
-        Chart(history.entries, id: \.datePaid) { entry in
+        // The axis is bounded to the payments themselves, with a little room either side. Left to
+        // its own devices the chart starts at zero, and a 30% rise on a utility bill flattens into
+        // a gentle slope — which is the one thing this screen exists to show. The area has to be
+        // anchored to that lower bound explicitly, since otherwise it drags the baseline back to
+        // zero and takes the scale with it.
+        let amounts = history.entries.map(\.amountPaid)
+        let lowest = (amounts.min() ?? 0)
+        let highest = (amounts.max() ?? 0)
+        let padding = max((highest - lowest) * 0.25, highest * 0.05, 1)
+        let floor = max(lowest - padding, 0)
+        let ceiling = highest + padding
+
+        return Chart(history.entries, id: \.datePaid) { entry in
             LineMark(
                 x: .value(UIString.columnPeriod(language),
                           Localization.periodLabel(entry.period, language: language)),
@@ -88,15 +100,15 @@ struct PriceHistoryScreen: View {
             AreaMark(
                 x: .value(UIString.columnPeriod(language),
                           Localization.periodLabel(entry.period, language: language)),
-                y: .value(UIString.columnAmount(language), entry.amountPaid)
+                yStart: .value(UIString.columnAmount(language), floor),
+                yEnd: .value(UIString.columnAmount(language), entry.amountPaid)
             )
             .interpolationMethod(.monotone)
             .foregroundStyle(.linearGradient(
                 colors: [.accentColor.opacity(0.35), .clear],
                 startPoint: .top, endPoint: .bottom))
         }
-        // The axis starts at the lowest payment rather than zero, so a small drift is still visible.
-        .chartYScale(domain: .automatic(includesZero: false))
+        .chartYScale(domain: floor...ceiling)
         .frame(height: 220)
         .padding(16)
         .glassEffect(.regular, in: .rect(cornerRadius: 20))

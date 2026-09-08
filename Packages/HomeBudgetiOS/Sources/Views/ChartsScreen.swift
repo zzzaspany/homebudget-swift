@@ -51,12 +51,12 @@ struct ChartsScreen: View {
                         angularInset: 1.5
                     )
                     .cornerRadius(4)
-                    .foregroundStyle(by: .value(
-                        UIString.columnCategory(language),
-                        Localization.category(share.category, language: language)))
+                    .foregroundStyle(Color.chartPalette[
+                        (shares.firstIndex { $0.category == share.category } ?? 0)
+                            % Color.chartPalette.count])
                 }
-                .chartLegend(position: .bottom, alignment: .leading, spacing: 12)
-                .frame(height: 280)
+                .chartLegend(.hidden)
+                .frame(height: 240)
                 // The total belongs in the hole, where it reads as the sum of what surrounds it.
                 .chartBackground { proxy in
                     GeometryReader { geometry in
@@ -75,8 +75,46 @@ struct ChartsScreen: View {
                 }
                 .padding(16)
                 .glassEffect(.regular, in: .rect(cornerRadius: 20))
+
+                legend(shares, total: total)
             }
         }
+    }
+
+    /// Wraps, and carries the amount beside each name — the built-in legend clips long category
+    /// names onto one row and says nothing about how much each is worth.
+    private func legend(_ shares: [Dashboard.CategoryShare], total: Double) -> some View {
+        VStack(spacing: 8) {
+            ForEach(Array(shares.enumerated()), id: \.element.category) { index, share in
+                HStack(spacing: 10) {
+                    Circle()
+                        .fill(Color.chartPalette[index % Color.chartPalette.count])
+                        .frame(width: 10, height: 10)
+
+                    Text(Localization.category(share.category, language: language))
+                        .font(.subheadline)
+                        .lineLimit(2)
+
+                    Spacer(minLength: 8)
+
+                    Text(NumberFormatting.currency(share.proratedAmount, language: language))
+                        .font(.subheadline.weight(.medium))
+                        .monospacedDigit()
+
+                    Text(percentage(share.proratedAmount, of: total))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 46, alignment: .trailing)
+                }
+            }
+        }
+        .padding(16)
+        .glassEffect(.regular, in: .rect(cornerRadius: 20))
+    }
+
+    private func percentage(_ value: Double, of total: Double) -> String {
+        guard total > 0 else { return "" }
+        return "\(Int((value / total * 100).rounded()))%"
     }
 
     // MARK: - Projection
@@ -118,6 +156,20 @@ struct ChartsScreen: View {
                 .foregroundStyle(.secondary)
         }
     }
+}
+
+extension Color {
+    /// The palette the web client uses, so a category is the same colour in both.
+    static let chartPalette: [Color] = [
+        Color(red: 0.39, green: 0.40, blue: 0.945),
+        Color(red: 0.02, green: 0.71, blue: 0.83),
+        Color(red: 0.06, green: 0.72, blue: 0.51),
+        Color(red: 0.96, green: 0.62, blue: 0.04),
+        Color(red: 0.94, green: 0.27, blue: 0.27),
+        Color(red: 0.23, green: 0.51, blue: 0.96),
+        Color(red: 0.93, green: 0.28, blue: 0.60),
+        Color(red: 0.55, green: 0.36, blue: 0.96),
+    ]
 }
 
 extension Language {

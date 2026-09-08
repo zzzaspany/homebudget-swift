@@ -80,7 +80,17 @@ struct DashboardScreen: View {
             }
             .navigationTitle("HomeBudget")
             .refreshable { await model.load() }
-            .task { if model.dashboard == nil { await model.load() } }
+            .task {
+                if model.dashboard == nil { await model.load() }
+                #if DEBUG
+                    // Opens the price history straight away, so it can be looked at without
+                    // driving the simulator through the taps that normally reach it.
+                    if DevelopMode.isOn, DevelopMode.initialSheet == "history" {
+                        historyTarget = model.dashboard?.expenses
+                            .first { $0.expense.isVariable }?.expense
+                    }
+                #endif
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {

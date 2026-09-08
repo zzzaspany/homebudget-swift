@@ -43,6 +43,17 @@ public enum NumberFormatting {
         return "\(value < 0 ? "-" : "")\(cents / 100).\(fraction < 10 ? "0" : "")\(fraction)"
     }
 
+    /// One decimal at most, with the point the language uses and no trailing zero: `32,2` rather
+    /// than `32.20`.
+    public static func trimmed(_ value: Double, language: Language) -> String {
+        let rounded = (value * 10).rounded() / 10
+        let whole = Int(rounded)
+        let tenths = Int((abs(rounded) * 10).rounded()) % 10
+        guard tenths != 0 else { return "\(whole)" }
+        let separator = language == .pl ? "," : "."
+        return "\(whole)\(separator)\(tenths)"
+    }
+
     /// A short form for chart axes, where the full amount would collide with its neighbours:
     /// `1,2 tys.` rather than `1 234,56 zł`.
     public static func compact(_ value: Double, language: Language) -> String {
