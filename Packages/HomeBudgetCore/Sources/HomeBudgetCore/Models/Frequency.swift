@@ -37,6 +37,20 @@ public enum Frequency: String, Codable, CaseIterable, Sendable {
         }
     }
 
+    /// How often this repeats, in a form a calendar or reminder store can be told about.
+    ///
+    /// Kept here rather than in the iOS app so the mapping is testable without EventKit, and so a
+    /// future export from the web client says the same thing.
+    public var recurrenceInterval: RecurrenceInterval {
+        switch self {
+        case .monthly: return .months(1)
+        case .biweekly: return .weeks(2)
+        case .quarterly: return .months(3)
+        case .semiAnnual: return .months(6)
+        case .yearly: return .months(12)
+        }
+    }
+
     /// Number of months between two occurrences, or nil for biweekly which is not month-aligned.
     var monthInterval: Int? {
         switch self {
@@ -47,4 +61,13 @@ public enum Frequency: String, Codable, CaseIterable, Sendable {
         case .biweekly: return nil
         }
     }
+}
+
+/// The gap between two occurrences of a recurring expense.
+///
+/// Deliberately not `Foundation.DateComponents`: `HomeBudgetCore` stays Foundation-free, and the
+/// two cases are all the domain has — nothing here repeats on, say, the second Tuesday.
+public enum RecurrenceInterval: Hashable, Sendable {
+    case weeks(Int)
+    case months(Int)
 }

@@ -61,6 +61,8 @@ struct DashboardScreen: View {
     let model: DashboardModel
     @State private var payTarget: Expense?
     @State private var historyTarget: Expense?
+    @State private var calendarTarget: Dashboard.ExpenseSummary?
+    @State private var reminders = ReminderExport()
     @Environment(\.horizontalSizeClass) private var sizeClass
 
     /// Two columns on a phone, four across an iPad. An adaptive grid packs the cards against the
@@ -72,6 +74,17 @@ struct DashboardScreen: View {
     }
 
     private var language: Language { .device }
+
+    private var reminderMessage: String? {
+        switch reminders.lastOutcome {
+        case .added: return UIString.remindersAdded(language)
+        case .updated(0): return UIString.remindersRemoved(language)
+        case .updated: return UIString.remindersUpdated(language)
+        case .denied: return UIString.remindersDenied(language)
+        case .failed(let message): return message
+        case nil: return nil
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -106,6 +119,32 @@ struct DashboardScreen: View {
                         Button(UIString.actionRefresh(language), systemImage: "arrow.clockwise") {
                             Task { await model.load() }
                         }
+
+                        Section {
+                            Button(
+                                reminders.hasExported
+                                    ? UIString.actionUpdateReminders(language)
+                                    : UIString.actionExportReminders(language),
+                                systemImage: "checklist"
+                            ) {
+                                Task {
+                                    await reminders.export(
+                                        model.dashboard?.expenses ?? [],
+                                        listName: UIString.remindersListName(language))
+                                }
+                            }
+                            .disabled(model.dashboard == nil || reminders.isExporting)
+
+                            if reminders.hasExported {
+                                Button(
+                                    UIString.actionRemoveReminders(language),
+                                    systemImage: "checklist.unchecked", role: .destructive
+                                ) {
+                                    Task { await reminders.removeAll() }
+                                }
+                            }
+                        }
+
                         Button(UIString.actionSignOut(language), systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
                             Task { await session.signOut() }
                         }
@@ -121,6 +160,20 @@ struct DashboardScreen: View {
             }
             .sheet(item: $historyTarget) { expense in
                 PriceHistoryScreen(expense: expense, session: session)
+            }
+            .sheet(item: $calendarTarget) { summary in
+                if let due = summary.dueDate {
+                    EventEditSheet(expense: summary.expense, dueDate: due) { _ in
+                        calendarTarget = nil
+                    }
+                    .ignoresSafeArea()
+                }
+            }
+            .alert(
+                reminderMessage ?? "",
+                isPresented: .constant(reminders.lastOutcome != nil)
+            ) {
+                Button("OK") { reminders.acknowledge() }
             }
             .sheet(item: $payTarget) { expense in
                 PaymentSheet(expense: expense, language: language) { amount in
@@ -219,7 +272,13 @@ struct DashboardScreen: View {
                 ExpenseRow(
                     summary: summary, language: language,
                     onPay: { payTarget = summary.expense },
-                    onHistory: { historyTarget = summary.expense })
+                    onHistory: { historyTarget = summary.expense },
+                    onAddToCalendar: {
+                        Task {
+                            guard await CalendarAccess.request() else { return }
+                            calendarTarget = summary
+                        }
+                    })
             }
         }
     }
@@ -230,6 +289,7 @@ struct ExpenseRow: View {
     let language: Language
     let onPay: () -> Void
     let onHistory: () -> Void
+    let onAddToCalendar: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -266,6 +326,10 @@ struct ExpenseRow: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
         .contentShape(.rect)
         .onTapGesture(perform: onHistory)
+        .contextMenu {
+            Button(UIString.actionHistory(language), systemImage: "chart.line.uptrend.xyaxis", action: onHistory)
+            Button(UIString.actionAddToCalendar(language), systemImage: "calendar.badge.plus", action: onAddToCalendar)
+        }
     }
 }
 

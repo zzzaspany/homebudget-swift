@@ -40,7 +40,30 @@ On a real device: install the CA through a configuration profile, then enable it
 Settings → General → About → Certificate Trust Settings. iOS keeps user-installed roots untrusted
 until that switch is thrown, which is a separate step from installing them.
 
-On a simulator this is more awkward than it should be. `xcrun simctl keychain <device>
-add-root-cert` reports success and writes nothing — the trust store stays zero bytes, on Xcode 26
-and both booted and shut down. Until that is fixed, signing in has to be exercised on a device, or
-against a server whose certificate the simulator already trusts.
+On a simulator, `xcrun simctl keychain <device> add-root-cert` does work, but the store it writes to
+moved and `trustd` caches it, so the device has to be restarted afterwards. The details, and how to
+verify the certificate actually landed, are in
+[docs/troubleshooting/ios-simulator.md](../../docs/troubleshooting/ios-simulator.md).
+
+Trusting the root is necessary but currently not sufficient. iOS rejects any TLS server certificate
+valid for more than 398 days — including one chaining to a user-installed root — and the lab's
+wildcard is issued for ten years, so `trustd` fails it with `[leaf OtherTrustValidityPeriod]`.
+macOS does not enforce this, which is why the same URL loads fine from a Mac. See
+[docs/troubleshooting/internal-ca-and-tls.md](../../docs/troubleshooting/internal-ca-and-tls.md);
+the fix is to reissue the leaf, not to change anything here.
+
+## Reminders and Calendar
+
+The recurring expenses can be mirrored into Apple Reminders, on a list of their own called
+HomeBudget — one reminder per active bill, on its real due date, repeating on the expense's own
+cycle. A bill is a task: it has a due date and it gets ticked off. Re-running the export updates in
+place rather than duplicating, and one menu item removes the lot.
+
+Separately, any single expense can be pushed to the Calendar from its context menu, through Apple's
+own event editor. That path needs only write-only calendar access, so the app never sees the diary
+it is adding to.
+
+The recurrence mapping lives in `HomeBudgetCore` (`Frequency.recurrenceInterval`) rather than here,
+so it is testable without EventKit. The awkward parts of EventKit — why a reminder carries no alarm,
+why its due date needs a time — are recorded in
+[docs/troubleshooting/eventkit.md](../../docs/troubleshooting/eventkit.md).

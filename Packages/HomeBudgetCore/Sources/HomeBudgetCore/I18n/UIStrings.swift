@@ -52,6 +52,15 @@ public enum UIString: String, CaseIterable, Sendable {
     case actionSave
     case actionCancel
     case actionSendEmail
+    case actionExportReminders
+    case actionUpdateReminders
+    case actionRemoveReminders
+    case actionAddToCalendar
+    case remindersListName
+    case remindersAdded
+    case remindersUpdated
+    case remindersRemoved
+    case remindersDenied
 
     case emptyExpenses
     case emptyAlerts
@@ -130,6 +139,15 @@ public enum UIString: String, CaseIterable, Sendable {
         .actionSave: "Zapisz",
         .actionCancel: "Anuluj",
         .actionSendEmail: "Wyślij alerty e-mail",
+        .actionExportReminders: "Dodaj do Przypomnień",
+        .actionUpdateReminders: "Odśwież Przypomnienia",
+        .actionRemoveReminders: "Usuń z Przypomnień",
+        .actionAddToCalendar: "Dodaj do Kalendarza",
+        .remindersListName: "HomeBudget",
+        .remindersAdded: "Dodano do Przypomnień",
+        .remindersUpdated: "Przypomnienia zaktualizowane",
+        .remindersRemoved: "Usunięto z Przypomnień",
+        .remindersDenied: "Brak dostępu do Przypomnień. Włącz go w Ustawieniach › Prywatność.",
 
         .emptyExpenses: "Brak wydatków do wyświetlenia.",
         .emptyAlerts: "Nic nie wymaga uwagi.",
@@ -198,6 +216,15 @@ public enum UIString: String, CaseIterable, Sendable {
         .actionSave: "Save",
         .actionCancel: "Cancel",
         .actionSendEmail: "Send e-mail alerts",
+        .actionExportReminders: "Add to Reminders",
+        .actionUpdateReminders: "Refresh Reminders",
+        .actionRemoveReminders: "Remove from Reminders",
+        .actionAddToCalendar: "Add to Calendar",
+        .remindersListName: "HomeBudget",
+        .remindersAdded: "Added to Reminders",
+        .remindersUpdated: "Reminders updated",
+        .remindersRemoved: "Removed from Reminders",
+        .remindersDenied: "No access to Reminders. Grant it in Settings › Privacy.",
 
         .emptyExpenses: "No expenses to show.",
         .emptyAlerts: "Nothing needs attention.",

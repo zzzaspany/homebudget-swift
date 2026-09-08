@@ -141,7 +141,8 @@ under `Packages/Server/Resources/Fonts` (Bitstream Vera licence, which permits e
 - [ ] Phase 6 — native iOS/iPadOS app
 
 Feature parity with the Python app is reached. See [docs/deployment.md](docs/deployment.md) for
-running it.
+running it, [AGENTS.md](AGENTS.md) for the conventions this repository holds to, and
+[docs/troubleshooting/](docs/troubleshooting/) for problems already hit and what fixed them.
 
 ## Deliberate differences from the Python app
 
