@@ -9,8 +9,8 @@ Ordered by what would actually hurt if left alone, not by what is fun.
 side is done and in use; this is client work only. Tracked as
 [#3](https://github.com/zzzaspany/homebudget-swift/issues/3).
 
-**The iOS app is not built in CI.** 2 900 lines — the largest package — checked by nothing but my
-opening Xcode. Free to fix on this repository. See [ci.md](ci.md).
+~~**The iOS app is not built in CI.**~~ Done — the `ios` job on a free macOS runner builds the app
+and the widget on every pull request. See [ci.md](ci.md).
 
 **The Quadlet units have never been exercised from a cold boot.** They work when started by hand.
 Whether the machine comes back correctly after a power cut is untested, and that is exactly when you

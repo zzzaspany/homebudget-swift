@@ -12,6 +12,7 @@ prices and free tiers move, so check them before acting on the numbers.
 | `secrets` | ubuntu | gitleaks over the pull request's history |
 | `test` | ubuntu, `swift:6.3.3-noble` | `HomeBudgetCore` and `Server` suites |
 | `web` | ubuntu, `swift:6.3.3-noble` | the client still compiles to WebAssembly |
+| `ios` | macos-26 | the iOS app and its widget still compile |
 | `image` | ubuntu | builds and pushes the container image on `main` |
 
 The `web` job earns its place for a reason worth stating: it is the only automated check that
@@ -19,11 +20,17 @@ The `web` job earns its place for a reason worth stating: it is the only automat
 the server and takes the WebAssembly bundle from 9 MB to 60 MB — see
 [troubleshooting/swift-wasm.md](troubleshooting/swift-wasm.md).
 
-## The gap
+## The gap that used to exist
 
-**The iOS app and its widget are never built in CI.** They compile on one Mac, mine, and nothing
-would catch a break until somebody next opened Xcode. That is now roughly 2 900 lines — the largest
-package in the repository — and it is the only one with no automated check at all.
+Until September 2026 the iOS app and its widget were never built in CI. They compiled on one Mac and
+nothing would have caught a break until somebody next opened Xcode — roughly 2 900 lines, the
+largest package in the repository, checked by nobody. The `ios` job closes that.
+
+Two decisions in it are worth knowing about. It generates the Xcode project with XcodeGen rather
+than expecting one, which also proves `project.yml` still describes a buildable project. And it
+builds against `generic/platform=iOS Simulator` rather than a named device, so that a runner image
+retiring "iPhone 17 Pro" cannot break the build for a reason unrelated to the change under test.
+Simulator builds sign locally, so no certificates go anywhere near CI.
 
 `HomeBudgetiOS` also has no test target. Most of what it does is SwiftUI, but not all: the EventKit
 recurrence mapping, the widget snapshot and the reminder read-back are ordinary logic. The rules
@@ -68,29 +75,15 @@ going to TestFlight or the App Store from CI. At that point `match` and `pilot` 
 hand-rolled `security import` and upload steps, and are worth it. Until then it is a Ruby toolchain
 and a `Fastfile` to keep current for no gain.
 
-## Recommended next step
+## What is still not covered
 
-Add a fifth job that builds the iOS app and the widget for the simulator. Free on this repository,
-and it turns "it compiles on Konrad's Mac" into something the pull request can prove:
+`HomeBudgetiOS` is built but not tested, because it has no test target — see the paragraph above for
+why that is deliberate rather than an omission.
 
-```yaml
-  ios:
-    runs-on: macos-26
-    steps:
-      - uses: actions/checkout@v4
-      - run: brew install xcodegen
-      - working-directory: Packages/HomeBudgetiOS
-        run: xcodegen
-      - working-directory: Packages/HomeBudgetiOS
-        run: |
-          xcodebuild -project HomeBudget.xcodeproj -scheme HomeBudget \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
-```
-
-Two things to watch when writing it for real: the runner's Xcode version has to be new enough for
-the iOS 26 deployment target, and the simulator name has to exist on the image — pinning
-`-destination 'generic/platform=iOS Simulator'` avoids depending on a device that a runner image
-update removes.
+The `ios` job selects `/Applications/Xcode.app` explicitly and prints the version. If the image ever
+ships an Xcode too old for the iOS 26 deployment target, that line is where it will be obvious;
+pinning a specific Xcode with `xcode-select -s /Applications/Xcode_26.x.app` is the fix, at the cost
+of having to bump it by hand.
 
 ## Sources
 
