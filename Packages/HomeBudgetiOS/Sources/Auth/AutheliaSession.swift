@@ -1,4 +1,5 @@
 import Foundation
+import HomeBudgetCore
 import Observation
 import WebKit
 
@@ -55,6 +56,13 @@ final class AutheliaSession {
     /// Authelia answers an unauthenticated request with a redirect to its login page rather than a
     /// 401, so a redirect away from our own host means the session is gone.
     func refresh() async {
+        #if DEBUG
+            if DevelopMode.isOn {
+                state = .signedIn(user: UIString.developMode(.pl))
+                return
+            }
+        #endif
+
         guard hasCookie else {
             state = .signedOut
             return

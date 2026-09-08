@@ -17,6 +17,14 @@ final class DashboardModel {
     }
 
     func load() async {
+        #if DEBUG
+            if DevelopMode.isOn {
+                dashboard = DevelopMode.dashboard
+                payments = DevelopMode.payments
+                return
+            }
+        #endif
+
         isLoading = true
         defer { isLoading = false }
         do {
@@ -33,6 +41,10 @@ final class DashboardModel {
     }
 
     func pay(_ expense: Expense, amount: Double?) async {
+        #if DEBUG
+            if DevelopMode.isOn { return }
+        #endif
+
         do {
             try await client.pay(expenseID: expense.id, amount: amount)
             await load()
@@ -46,15 +58,11 @@ final class DashboardModel {
 
 struct DashboardScreen: View {
     let session: AutheliaSession
-    @State private var model: DashboardModel
+    let model: DashboardModel
     @State private var payTarget: Expense?
+    @State private var historyTarget: Expense?
 
-    init(session: AutheliaSession) {
-        self.session = session
-        _model = State(initialValue: DashboardModel(session: session))
-    }
-
-    private var language: Language { Language(code: Locale.current.language.languageCode?.identifier) }
+    private var language: Language { .device }
 
     var body: some View {
         NavigationStack {
@@ -76,10 +84,10 @@ struct DashboardScreen: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Button("Odśwież", systemImage: "arrow.clockwise") {
+                        Button(UIString.actionRefresh(language), systemImage: "arrow.clockwise") {
                             Task { await model.load() }
                         }
-                        Button("Wyloguj", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
+                        Button(UIString.actionSignOut(language), systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
                             Task { await session.signOut() }
                         }
                     } label: {
@@ -87,10 +95,13 @@ struct DashboardScreen: View {
                     }
                 }
             }
-            .alert("Coś poszło nie tak", isPresented: .constant(model.errorMessage != nil)) {
+            .alert(UIString.errorTitle(language), isPresented: .constant(model.errorMessage != nil)) {
                 Button("OK") { model.errorMessage = nil }
             } message: {
                 Text(model.errorMessage ?? "")
+            }
+            .sheet(item: $historyTarget) { expense in
+                PriceHistoryScreen(expense: expense, session: session)
             }
             .sheet(item: $payTarget) { expense in
                 PaymentSheet(expense: expense, language: language) { amount in
@@ -184,9 +195,10 @@ struct DashboardScreen: View {
                 .font(.headline)
 
             ForEach(summaries) { summary in
-                ExpenseRow(summary: summary, language: language) {
-                    payTarget = summary.expense
-                }
+                ExpenseRow(
+                    summary: summary, language: language,
+                    onPay: { payTarget = summary.expense },
+                    onHistory: { historyTarget = summary.expense })
             }
         }
     }
@@ -196,6 +208,7 @@ struct ExpenseRow: View {
     let summary: Dashboard.ExpenseSummary
     let language: Language
     let onPay: () -> Void
+    let onHistory: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -230,6 +243,8 @@ struct ExpenseRow: View {
         }
         .padding(14)
         .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .contentShape(.rect)
+        .onTapGesture(perform: onHistory)
     }
 }
 

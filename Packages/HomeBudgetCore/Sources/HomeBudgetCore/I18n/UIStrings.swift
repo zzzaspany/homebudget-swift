@@ -17,6 +17,15 @@ public enum UIString: String, CaseIterable, Sendable {
     case chartPeak
     case viewList
     case viewCalendar
+    case viewCharts
+
+    case signIn
+    case signInPrompt
+    case signInTitle
+    case actionRefresh
+    case actionSignOut
+    case errorTitle
+    case developMode
 
     case columnName
     case columnAmount
@@ -86,6 +95,15 @@ public enum UIString: String, CaseIterable, Sendable {
         .chartPeak: "Szczyt",
         .viewList: "Lista",
         .viewCalendar: "Kalendarz",
+        .viewCharts: "Wykresy",
+
+        .signIn: "Zaloguj się",
+        .signInPrompt: "Zaloguj się przez Authelię, tak samo jak w przeglądarce.",
+        .signInTitle: "Logowanie",
+        .actionRefresh: "Odśwież",
+        .actionSignOut: "Wyloguj",
+        .errorTitle: "Coś poszło nie tak",
+        .developMode: "Tryb deweloperski",
 
         .columnName: "Nazwa",
         .columnAmount: "Kwota",
@@ -145,6 +163,15 @@ public enum UIString: String, CaseIterable, Sendable {
         .chartPeak: "Peak",
         .viewList: "List",
         .viewCalendar: "Calendar",
+        .viewCharts: "Charts",
+
+        .signIn: "Sign in",
+        .signInPrompt: "Sign in through Authelia, the same way the browser does.",
+        .signInTitle: "Sign in",
+        .actionRefresh: "Refresh",
+        .actionSignOut: "Sign out",
+        .errorTitle: "Something went wrong",
+        .developMode: "Develop mode",
 
         .columnName: "Name",
         .columnAmount: "Amount",

@@ -43,6 +43,18 @@ public enum NumberFormatting {
         return "\(value < 0 ? "-" : "")\(cents / 100).\(fraction < 10 ? "0" : "")\(fraction)"
     }
 
+    /// A short form for chart axes, where the full amount would collide with its neighbours:
+    /// `1,2 tys.` rather than `1 234,56 zł`.
+    public static func compact(_ value: Double, language: Language) -> String {
+        guard abs(value) >= 1000 else { return plain(value.rounded()) }
+        let thousands = (value / 100).rounded() / 10
+        // Written out by hand: `replacingOccurrences` is Foundation, which this module stays clear
+        // of so it can be compiled to WebAssembly.
+        let separator: Character = language == .pl ? "," : "."
+        let text = String("\(thousands)".map { $0 == "." ? separator : $0 })
+        return language == .pl ? "\(text) tys." : "\(text)k"
+    }
+
     /// Amount with the currency marker, e.g. `1 234,56 zł` or `PLN 1,234.56`.
     public static func currency(_ value: Double, language: Language) -> String {
         switch language {
