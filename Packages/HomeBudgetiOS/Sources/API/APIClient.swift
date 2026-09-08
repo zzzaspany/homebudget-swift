@@ -54,6 +54,18 @@ struct APIClient {
         _ = try await raw("api/expenses/\(id)", method: "DELETE", body: nil)
     }
 
+    /// Downloads a report as bytes, for handing to a share sheet.
+    ///
+    /// The server renders both formats; the app does not reimplement either. A PDF built twice
+    /// would eventually disagree with itself.
+    func report(_ kind: ReportKind, language: Language) async throws -> Data {
+        try await raw("api/reports/\(kind.rawValue)?lang=\(language.rawValue)", method: "GET", body: nil)
+    }
+
+    func sendAlertEmail() async throws {
+        _ = try await raw("api/notifications/send-email", method: "POST", body: Data("{}".utf8))
+    }
+
     // MARK: - Transport
 
     private func get<T: Decodable>(_ path: String) async throws -> T {
@@ -133,5 +145,21 @@ struct ExpenseInput {
             "active": active,
             "is_variable": isVariable,
         ]
+    }
+}
+
+
+enum ReportKind: String, CaseIterable, Identifiable {
+    case csv
+    case pdf
+
+    var id: String { rawValue }
+
+    /// What the share sheet should call the file. A timestamp keeps two exports from colliding in
+    /// whatever the user shares them into.
+    func filename(on date: CalendarDate) -> String {
+        let month = date.month < 10 ? "0\(date.month)" : "\(date.month)"
+        let day = date.day < 10 ? "0\(date.day)" : "\(date.day)"
+        return "homebudget-\(date.year)-\(month)-\(day).\(rawValue)"
     }
 }

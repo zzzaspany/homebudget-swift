@@ -54,9 +54,19 @@ the fix is to reissue the leaf, not to change anything here.
 
 ## What it does
 
-The dashboard, charts, a month calendar, price history, recording a payment, and full editing of the
-recurring expenses — add, change and delete, with the same validation the server applies so the form
-does not have to wait for a round trip to say the amount is missing.
+Four tabs. The dashboard lists the recurring expenses with search and filters, and lets you add,
+edit, delete and pay them — the same validation the server applies, so the form does not wait for a
+round trip to say the amount is missing. Then charts, a month calendar, and a "More" tab for
+everything that is not opened daily: the reserves for non-monthly bills, per-category ceilings,
+CSV and PDF reports, the e-mail alerts, and where the server lives.
+
+Category ceilings are stored on the device, not on the server — they are intentions, not facts about
+the expenses, and the web client keeps its own in the browser for the same reason. The two can
+disagree; that is the accepted cost of not inventing a server-side model for a number one person
+picks. The arithmetic behind them lives in `HomeBudgetCore` and has tests.
+
+The one thing the web client has and this does not: attaching an invoice when recording a payment.
+Tracked as issue #3.
 
 ## The widget
 
@@ -81,6 +91,12 @@ place rather than duplicating, and one menu item removes the lot.
 Separately, any single expense can be pushed to the Calendar from its context menu, through Apple's
 own event editor. That path needs only write-only calendar access, so the app never sees the diary
 it is adding to.
+
+Reminders that have been ticked off can be read back and recorded as payments, from the More tab.
+This is what full access to Reminders was taken for. A completed recurring reminder immediately
+spawns its next occurrence, so "completed" is a moment rather than a state — the completion date is
+compared against a high-water mark, which only moves when something is actually found, so a
+completion landing a moment after a sync is not swallowed.
 
 The recurrence mapping lives in `HomeBudgetCore` (`Frequency.recurrenceInterval`) rather than here,
 so it is testable without EventKit. The awkward parts of EventKit — why a reminder carries no alarm,

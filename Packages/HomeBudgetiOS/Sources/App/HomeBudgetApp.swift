@@ -117,9 +117,12 @@ struct MainTabs: View {
     let session: AutheliaSession
     @State private var model: DashboardModel
     @State private var selection: Screen
+    /// One instance for the app, so the "record ticked-off reminders" action on the More tab shares
+    /// the identifier map the export on the dashboard writes.
+    @State private var reminders = ReminderExport()
 
     enum Screen: String, Hashable {
-        case expenses, charts, calendar
+        case expenses, charts, calendar, more
     }
 
     init(session: AutheliaSession) {
@@ -142,13 +145,16 @@ struct MainTabs: View {
     var body: some View {
         TabView(selection: $selection) {
             Tab(UIString.sectionExpenses(language), systemImage: "list.bullet", value: .expenses) {
-                DashboardScreen(session: session, model: model)
+                DashboardScreen(session: session, model: model, reminders: reminders)
             }
             Tab(UIString.viewCharts(language), systemImage: "chart.pie", value: .charts) {
                 ChartsScreen(model: model)
             }
             Tab(UIString.viewCalendar(language), systemImage: "calendar", value: .calendar) {
                 CalendarScreen(model: model)
+            }
+            Tab(UIString.tabMore(language), systemImage: "ellipsis.circle", value: .more) {
+                MoreScreen(session: session, model: model, reminders: reminders)
             }
         }
         .task { if model.dashboard == nil { await model.load() } }

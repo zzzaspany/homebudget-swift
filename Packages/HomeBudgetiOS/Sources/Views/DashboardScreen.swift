@@ -120,12 +120,16 @@ final class DashboardModel {
 struct DashboardScreen: View {
     let session: AutheliaSession
     let model: DashboardModel
+    /// Shared with the More tab, so both see the same export state.
+    let reminders: ReminderExport
     @State private var payTarget: Expense?
     @State private var historyTarget: Expense?
     @State private var calendarTarget: Dashboard.ExpenseSummary?
     @State private var editorTarget: EditorTarget?
+    @State private var search = ""
+    @State private var frequencyFilter: Frequency?
+    @State private var statusFilter: ExpenseStatus?
     @State private var deleteTarget: Expense?
-    @State private var reminders = ReminderExport()
     @Environment(\.horizontalSizeClass) private var sizeClass
 
     /// Two columns on a phone, four across an iPad. An adaptive grid packs the cards against the
@@ -137,6 +141,27 @@ struct DashboardScreen: View {
     }
 
     private var language: Language { .device }
+
+    /// Search matches the name or the category, in whichever language the category is shown in —
+    /// looking for "Utilities" should find a category stored as "Media i Eksploatacja".
+    private func matches(_ summary: Dashboard.ExpenseSummary) -> Bool {
+        if let frequencyFilter, summary.expense.frequency != frequencyFilter { return false }
+        if let statusFilter, summary.status != statusFilter { return false }
+
+        let needle = search.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !needle.isEmpty else { return true }
+
+        let haystack = [
+            summary.expense.name,
+            summary.expense.category,
+            Localization.category(summary.expense.category, language: language),
+        ]
+        return haystack.contains { $0.lowercased().contains(needle) }
+    }
+
+    private var isFiltering: Bool {
+        frequencyFilter != nil || statusFilter != nil || !search.isEmpty
+    }
 
     private var reminderMessage: String? {
         switch reminders.lastOutcome {
@@ -164,6 +189,7 @@ struct DashboardScreen: View {
                 .padding()
             }
             .navigationTitle("HomeBudget")
+            .searchable(text: $search, prompt: UIString.searchPlaceholder(language))
             .refreshable { await model.load() }
             .task {
                 if model.dashboard == nil { await model.load() }
@@ -356,11 +382,27 @@ struct DashboardScreen: View {
     // MARK: - Expenses
 
     private func expenses(_ summaries: [Dashboard.ExpenseSummary]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(UIString.sectionExpenses(language))
-                .font(.headline)
+        let shown = summaries.filter(matches)
 
-            ForEach(summaries) { summary in
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(UIString.sectionExpenses(language))
+                    .font(.headline)
+                if isFiltering {
+                    Text("\(shown.count)/\(summaries.count)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if shown.isEmpty {
+                Text(UIString.emptyExpenses(language))
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 12)
+            }
+
+            ForEach(shown) { summary in
                 ExpenseRow(
                     summary: summary, language: language,
                     onPay: { payTarget = summary.expense },
