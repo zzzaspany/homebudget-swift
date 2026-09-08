@@ -1,3 +1,4 @@
+/// A recurring bill: what it costs, how often it falls due, and when it was last settled.
 public struct Expense: Codable, Hashable, Sendable, Identifiable {
     public let id: String
     public var name: String
@@ -54,6 +55,10 @@ public struct Expense: Codable, Hashable, Sendable, Identifiable {
     }
 }
 
+/// A settled payment: what was actually handed over, when, and for which period.
+///
+/// The amount is recorded separately from the expense's nominal one, because a variable bill
+/// rarely costs what it says it will.
 public struct Payment: Codable, Hashable, Sendable, Identifiable {
     public let id: String
     public var expenseID: String

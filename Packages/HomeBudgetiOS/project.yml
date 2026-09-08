@@ -47,3 +47,10 @@ targets:
         # the local domain rather than the public internet.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+        # Reminders has no write-only tier — it is full access or nothing. Taken because reading
+        # completions back is what makes the export worth having.
+        NSRemindersFullAccessUsageDescription: >-
+          Aby dodać terminy płatności do Przypomnień i odczytać, które z nich zostały odhaczone.
+        # Calendar, by contrast, is only ever written to, one event at a time and only when asked.
+        NSCalendarsWriteOnlyAccessUsageDescription: >-
+          Aby dodać termin płatności do Kalendarza.

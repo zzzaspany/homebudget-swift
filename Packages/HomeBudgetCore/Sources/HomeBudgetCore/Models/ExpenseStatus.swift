@@ -1,3 +1,4 @@
+/// Where a bill stands relative to its due date.
 public enum ExpenseStatus: String, Codable, CaseIterable, Sendable {
     case paid
     case overdue
@@ -11,6 +12,8 @@ public enum ExpenseStatus: String, Codable, CaseIterable, Sendable {
     }
 }
 
+/// The three answers ``StatusCalculator`` produces together, because computing one means
+/// computing all of them.
 public struct ExpenseStatusResult: Hashable, Sendable {
     public let status: ExpenseStatus
     public let dueDate: CalendarDate?

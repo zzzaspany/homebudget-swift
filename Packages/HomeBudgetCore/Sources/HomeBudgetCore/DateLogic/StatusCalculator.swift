@@ -74,6 +74,10 @@ enum CycleResolver {
     }
 }
 
+/// Works out where a bill stands: its status, its next due date, and how far away that is.
+///
+/// The invariant worth knowing is that a bill already paid for the current period reports
+/// the date of its *next* occurrence, not the one just settled.
 public enum StatusCalculator {
     /// Status, next due date and days remaining for one expense.
     ///
