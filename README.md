@@ -185,6 +185,7 @@ Feature parity with the Python app is reached, on the web and on the phone.
 | [docs/ci.md](docs/ci.md) | what CI covers, what it does not, and what a macOS runner costs |
 | [docs/releasing-and-costs.md](docs/releasing-and-costs.md) | getting the app onto a phone, the bill, and the Polish tax treatment |
 | [docs/troubleshooting/](docs/troubleshooting/) | problems already hit and what fixed them |
+| [CHANGELOG.md](CHANGELOG.md) | what changed, and the two places figures deliberately differ from the Python app |
 
 ## Deliberate differences from the Python app
 

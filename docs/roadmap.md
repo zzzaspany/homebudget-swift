@@ -21,11 +21,21 @@ exist, but nobody has confirmed a browser actually registers the worker.
 
 ## Things that will bite on a date
 
-**The wildcard certificate expires 10 October 2027.** Nothing will remind you. When it goes, every
-Apple device on the network stops trusting `office.lab` — quietly, because macOS is more forgiving
-than iOS and the Mac will keep working for a while. An Uptime Kuma monitor on the certificate expiry
-date, or a calendar entry, costs minutes. The reissue itself is one script; see
-`office-proxmox-server/08-officelab-ca.md`.
+**The wildcard certificate expires 10 October 2027.** An earlier draft of this file claimed nothing
+would remind anyone. That was wrong, and checking took two minutes: Uptime Kuma already has
+`tlsExpiryNotifyDays = [7,14,21]`, an active default notification channel, and currently reports 396
+days remaining on the `office.lab` wildcard. The warning will arrive.
+
+What is *not* covered: **`rachunki.office.lab` has no monitor at all**, and five monitors — including
+**Authelia**, whose failure takes every other service with it — have no notification attached, so
+their alerts go nowhere. Both are worth fixing in the Kuma UI; a new monitor picks up the
+notification automatically because the channel is marked default.
+
+A monitor on HomeBudget should point at `http://192.168.0.182:8000/health` rather than the public
+URL. Everything on `office.lab` sits behind Authelia, so `https://rachunki.office.lab/` answers 200
+whenever *Authelia* is healthy — it would stay green with the app dead behind it.
+
+The reissue itself is one script; see `office-proxmox-server/08-officelab-ca.md`.
 
 **Authelia's `session.secret` is known to have been exposed** in a terminal on 2026-09-07 and was
 deliberately not rotated — the value never left the machine or the lab, and rotation invalidates
@@ -44,12 +54,12 @@ what would make the Reminders integration feel like it belongs rather than like 
 to remember to use. The high-water-mark logic is already there and already careful about the
 "completed is a moment, not a state" problem.
 
-### Notifications that do not depend on opening the app
+### ~~Notifications that do not depend on opening the app~~ — done
 
-The e-mail alerts work, but a bill due in two days should be able to say so on the phone. `UNUser
-NotificationCenter` with a local notification per upcoming expense, refreshed with the widget
-snapshot, would need no server changes at all. The scheduling rule already exists as
-`Frequency.dueSoonThresholdDays`.
+Local notifications, scheduled on every dashboard refresh alongside the widget snapshot. Local
+rather than push: the schedule is known days ahead and needs no server, where push would mean APNs
+certificates, a device-token store and a sender in the Vapor app to deliver something the phone can
+work out for itself.
 
 ### An iPad-shaped layout
 

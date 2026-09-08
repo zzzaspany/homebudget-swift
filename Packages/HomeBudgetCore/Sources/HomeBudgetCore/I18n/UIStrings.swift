@@ -90,6 +90,10 @@ public enum UIString: String, CaseIterable, Sendable {
     case filterTitle
     case filterClear
     case emailSent
+    case notificationsEnable
+    case notificationsDenied
+    case notificationsScheduled
+    case notificationsHint
 
     case emptyExpenses
     case emptyAlerts
@@ -206,6 +210,10 @@ public enum UIString: String, CaseIterable, Sendable {
         .filterTitle: "Filtry",
         .filterClear: "Wyczyść",
         .emailSent: "Alerty wysłane.",
+        .notificationsEnable: "Powiadamiaj o terminach",
+        .notificationsDenied: "Brak zgody na powiadomienia. Włącz ją w Ustawieniach › Powiadomienia.",
+        .notificationsScheduled: "Zaplanowano przypomnień:",
+        .notificationsHint: "Powiadomienie przyjdzie tyle dni przed terminem, ile wynosi próg danego cyklu.",
 
         .emptyExpenses: "Brak wydatków do wyświetlenia.",
         .emptyAlerts: "Nic nie wymaga uwagi.",
@@ -312,6 +320,10 @@ public enum UIString: String, CaseIterable, Sendable {
         .filterTitle: "Filters",
         .filterClear: "Clear",
         .emailSent: "Alerts sent.",
+        .notificationsEnable: "Warn me before bills are due",
+        .notificationsDenied: "Notifications are not permitted. Allow them in Settings › Notifications.",
+        .notificationsScheduled: "Warnings scheduled:",
+        .notificationsHint: "The warning arrives as many days ahead as that cycle's own threshold.",
 
         .emptyExpenses: "No expenses to show.",
         .emptyAlerts: "Nothing needs attention.",

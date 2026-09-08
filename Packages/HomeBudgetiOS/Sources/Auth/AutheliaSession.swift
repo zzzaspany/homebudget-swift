@@ -115,7 +115,11 @@ final class AutheliaSession {
     }
 
     /// Drops the session locally. Authelia keeps its own record until it expires.
+    ///
+    /// Scheduled warnings go with it: a device that no longer has a session should stop announcing
+    /// bills it can no longer show.
     func signOut() async {
+        await DueNotifications.cancelAll()
         for cookie in storage.cookies ?? [] {
             storage.deleteCookie(cookie)
         }

@@ -65,11 +65,16 @@ struct AuthAndAssetTests {
         }
     }
 
-    @Test("Health check needs no identity")
+    @Test("Health check needs no identity, and says what is running")
     func health() async throws {
         try await withServer(devMode: false) { app in
             try await app.testing().test(.GET, "/health") { response in
                 #expect(response.status == .ok)
+                // The version answers "what is actually deployed" without reading image tags.
+                // Falls back to "dev" when APP_VERSION is unset, which is the case under test.
+                let body = try response.content.decode(HealthResponse.self)
+                #expect(body.status == "ok")
+                #expect(!body.version.isEmpty)
             }
         }
     }

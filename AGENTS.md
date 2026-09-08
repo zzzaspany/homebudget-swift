@@ -139,6 +139,32 @@ Deployment changes to shared infrastructure — the reverse proxy, the wildcard 
 another service depends on — need the owner's explicit go-ahead, per change. Approval for one is not
 approval for the next.
 
+## Releases
+
+`VERSION` at the repository root is the single source of truth. The same number is carried in
+`Packages/HomeBudgetiOS/project.yml`, and CI fails the build if the two disagree — or if a `v*` tag
+does not match either.
+
+```bash
+make version              # what the number is, and everywhere it is recorded
+make release NEW=1.1.0    # bump, commit, tag
+```
+
+`make release` refuses to run on a dirty tree, and refuses to tag a version that has no section in
+`CHANGELOG.md`. It does **not** push. Pushing the tag is what triggers the image build and push to
+GHCR, which is the moment a release becomes real — that stays a deliberate act.
+
+Write the changelog entry *before* tagging, not after. An entry written from the diff a week later
+records what changed; one written while the work is fresh records why, which is the part worth
+having.
+
+Semantic versioning, with "breaking" read for a project that has one deployment: a change needing a
+migration run by hand, a change to the API the web and iOS clients share, or a change needing
+configuration updated before the container will start.
+
+A running container reports its version at `/health`, so "what is actually deployed" has an answer
+that does not involve reading image tags.
+
 ## Git
 
 Work on a branch named for the change. Check which branch is checked out before the first commit,

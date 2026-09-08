@@ -66,6 +66,16 @@ struct MoreScreen: View {
 
                 Section {
                     Button {
+                        Task { await enableNotifications() }
+                    } label: {
+                        Label(UIString.notificationsEnable(language), systemImage: "bell.badge")
+                    }
+                } footer: {
+                    Text(UIString.notificationsHint(language))
+                }
+
+                Section {
+                    Button {
                         Task { await syncReminders() }
                     } label: {
                         Label(UIString.remindersSyncPaid(language), systemImage: "checklist.checked")
@@ -128,6 +138,20 @@ struct MoreScreen: View {
         } catch {
             notice = error.localizedDescription
         }
+    }
+
+    /// Asks for permission, then schedules from whatever the dashboard currently holds. The refresh
+    /// path keeps them current afterwards without asking again.
+    private func enableNotifications() async {
+        guard await DueNotifications.requestAuthorization() else {
+            notice = UIString.notificationsDenied(language)
+            return
+        }
+        guard let dashboard = model.dashboard else { return }
+        // The count comes back from the notification centre, so it reports what the system holds
+        // rather than what we hoped to give it.
+        let scheduled = await DueNotifications.reschedule(from: dashboard, language: language)
+        notice = "\(UIString.notificationsScheduled(language)) \(scheduled)"
     }
 
     private func syncReminders() async {

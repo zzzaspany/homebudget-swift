@@ -81,6 +81,25 @@ the only thing that changes on its own and it changes once a day.
 Which bills count as upcoming is decided in `HomeBudgetCore` (`Dashboard.upcoming(limit:)`), not in
 the widget, so the rule has tests.
 
+## Notifications
+
+A bill warns on the phone as many days ahead as its own cycle's threshold — three for a fortnightly
+bill, fourteen for a yearly one, the same numbers the dashboard colours by rather than a second
+opinion about what "soon" means.
+
+Local notifications, not push. The schedule is known days in advance and needs no server; push would
+mean APNs certificates, a device-token store and a sender in the Vapor app, all to deliver something
+the phone can work out from data it already has.
+
+They are rescheduled from scratch on every dashboard refresh rather than diffed — there are at most
+a few dozen, and reconciling two sets of pending notifications is more code and more ways to be
+wrong. Signing out cancels them: a device without a session should not be announcing bills it can no
+longer show. A warning day already past is skipped, because a notification cannot be scheduled into
+the past and an overdue bill is already being shouted about by three other things.
+
+Which bills warn, and on what day, is decided in `HomeBudgetCore` (`Dashboard.dueReminders`) and has
+tests.
+
 ## Reminders and Calendar
 
 The recurring expenses can be mirrored into Apple Reminders, on a list of their own called

@@ -47,7 +47,7 @@ endef
 .DEFAULT_GOAL := help
 .PHONY: help build core server web test test-core test-server run migrate revert \
         image image-run image-push image-remote image-remote-push shell db-psql db-backup db-reset \
-        ios ios-open ios-build ios-run docs docs-open docs-html lint clean clean-all doctor
+        ios ios-open ios-build ios-run docs docs-open docs-html version release lint clean clean-all doctor
 
 # --- Help --------------------------------------------------------------------
 
@@ -98,6 +98,32 @@ ios-run: ios-build ## Build, install and launch on the simulator
 	@app=$$(find $(SCRATCH)/ios -name HomeBudget.app -path '*Debug-iphonesimulator*' | head -1); \
 		xcrun simctl install "$(IOS_SIMULATOR)" "$$app" && \
 		xcrun simctl launch "$(IOS_SIMULATOR)" $(IOS_BUNDLE_ID)
+
+# --- Releasing ---------------------------------------------------------------
+
+# VERSION is the single source of truth. The iOS project carries the same number so the app can
+# say what it is, and CI checks the two agree rather than trusting anyone to remember.
+VERSION := $(shell cat VERSION)
+
+version: ## Print the current version and where it is recorded
+	@echo "VERSION file:      $(VERSION)"
+	@echo "iOS project.yml:   $$(grep -m1 MARKETING_VERSION $(IOS_DIR)/project.yml | sed 's/.*: *//' | tr -d '\"')"
+	@echo "latest git tag:    $$(git describe --tags --abbrev=0 2>/dev/null || echo '(none)')"
+
+# Bumps the version everywhere, then tags. Pushing the tag is left to you on purpose: it triggers
+# the image build and push, which is the moment a release becomes real.
+release: ## Cut a release: make release NEW=1.1.0
+	@test -n "$(NEW)" || { echo "Usage: make release NEW=1.1.0"; exit 1; }
+	@git diff --quiet || { echo "Working tree is dirty — commit or stash first."; exit 1; }
+	@grep -q "^## \[$(NEW)\]" CHANGELOG.md || { \
+		echo "CHANGELOG.md has no '## [$(NEW)]' section. Write it before tagging."; exit 1; }
+	@echo "$(NEW)" > VERSION
+	@sed -i '' 's/MARKETING_VERSION: ".*"/MARKETING_VERSION: "$(NEW)"/' $(IOS_DIR)/project.yml
+	@git add VERSION CHANGELOG.md $(IOS_DIR)/project.yml
+	@git commit -q -m "Release $(NEW)"
+	@git tag -a "v$(NEW)" -m "Release $(NEW)"
+	@echo "Tagged v$(NEW). Push it when you mean it:"
+	@echo "    git push && git push origin v$(NEW)"
 
 # --- Documentation -----------------------------------------------------------
 

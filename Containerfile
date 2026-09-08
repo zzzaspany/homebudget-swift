@@ -62,8 +62,12 @@ RUN mkdir -p /app/data/uploads && chown -R homebudget:homebudget /app/data
 USER homebudget
 EXPOSE 8000
 
+# Stamped by CI from the git tag, so a running container can say which build it is.
+ARG APP_VERSION=dev
+
 ENV PORT=8000 \
-    INVOICE_STORAGE_PATH=/app/data/uploads
+    INVOICE_STORAGE_PATH=/app/data/uploads \
+    APP_VERSION=${APP_VERSION}
 
 ENTRYPOINT ["./App"]
 CMD ["serve", "--env", "production", "--hostname", "0.0.0.0", "--port", "8000"]
