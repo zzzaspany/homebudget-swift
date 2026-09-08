@@ -28,6 +28,27 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # One number, recorded in three places. Cheap to check, and the failure it prevents — an image
+  # tagged v1.1.0 that reports 1.0.0 from /health — is the kind you only notice when debugging
+  # something else.
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: VERSION, the iOS project and any tag must agree
+        run: |
+          file=$(cat VERSION)
+          ios=$(grep -m1 MARKETING_VERSION Packages/HomeBudgetiOS/project.yml | sed 's/.*: *//' | tr -d '"')
+          echo "VERSION=$file  project.yml=$ios  ref=${GITHUB_REF#refs/tags/}"
+          [ "$file" = "$ios" ] || { echo "::error::VERSION ($file) and project.yml ($ios) disagree"; exit 1; }
+          case "$GITHUB_REF" in
+            refs/tags/v*)
+              tag="${GITHUB_REF#refs/tags/v}"
+              [ "$file" = "$tag" ] || { echo "::error::tag v$tag does not match VERSION ($file)"; exit 1; }
+              ;;
+          esac
+          grep -q "^## \[$file\]" CHANGELOG.md || echo "::warning::CHANGELOG.md has no section for $file"
+
   test:
     runs-on: ubuntu-latest
     container: swift:6.3.3-noble
@@ -93,7 +114,7 @@ jobs:
             build
 
   image:
-    needs: [test, web, ios]
+    needs: [version, test, web, ios]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
@@ -125,6 +146,8 @@ jobs:
           context: .
           file: Containerfile
           push: true
+          build-args: |
+            APP_VERSION=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
