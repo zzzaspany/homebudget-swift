@@ -17,11 +17,11 @@ Swift stack it can share domain code with.
 | `Packages/HomeBudgetCore` | Domain logic, aggregation and translations. Pure Swift, Foundation-only. | everywhere |
 | `Packages/Server` | Vapor API + Fluent/PostgreSQL, serves the web client. | Linux (container) |
 | `Packages/WebClient` | Web UI compiled to WebAssembly. | browser |
+| `Packages/HomeBudgetiOS` | Native SwiftUI app and its home-screen widget. | iPhone, iPad |
 
 Each package builds independently — a WebAssembly target cannot link Vapor's dependencies, so they
-deliberately do not share one manifest.
-
-The iOS app will be added later as a fourth package, reusing `HomeBudgetCore` unchanged.
+deliberately do not share one manifest. All three clients share `HomeBudgetCore` unchanged; none of
+them recalculates anything.
 
 ## Working on it
 
@@ -142,6 +142,20 @@ It is driven through `xcodebuild docbuild` rather than swift-docc-plugin so that
 `HomeBudgetCore`'s manifest gains no dependency — that manifest is resolved by the WebAssembly
 build too, where a documentation plugin has no business being.
 
+## iOS and iPadOS
+
+A native SwiftUI app sharing `HomeBudgetCore` with the other two clients, which is what the whole
+rewrite was for: `.glassEffect()` and the rest of Liquid Glass are reachable only from native code,
+and no browser API exposes them.
+
+Four tabs — expenses with search and filters, charts, a month calendar, and the rest — plus a
+home-screen widget showing the next bills due and the days left. It signs in through Authelia the
+same way the browser does, carrying the same cookie, rather than adding a second way to
+authenticate against a server that has exactly one.
+
+It can also mirror the recurring expenses into Apple Reminders and push a single expense into the
+Calendar. See [Packages/HomeBudgetiOS/README.md](Packages/HomeBudgetiOS/README.md).
+
 ## Reports
 
 CSV is generated in `HomeBudgetCore`. PDF is written by hand in `Packages/Server/Sources/App/PDF`:
@@ -156,12 +170,21 @@ under `Packages/Server/Resources/Fonts` (Bitstream Vera licence, which permits e
 - [x] Phase 3 — web client: dashboard, charts, calendar, dialogs, invoice attachments
 - [x] Phase 4 — CSV and PDF reports, e-mail alerts
 - [x] Phase 5 — container image, Quadlet units, CI
-- [ ] Phase 6 — native iOS/iPadOS app: feature parity with the web client apart from invoice
-      attachments, plus Reminders/Calendar export and a home-screen widget
+- [x] Phase 6 — native iOS/iPadOS app: parity with the web client apart from invoice attachments
+      ([#3](https://github.com/zzzaspany/homebudget-swift/issues/3)), plus Reminders and Calendar
+      export and a home-screen widget
 
-Feature parity with the Python app is reached. See [docs/deployment.md](docs/deployment.md) for
-running it, [AGENTS.md](AGENTS.md) for the conventions this repository holds to, and
-[docs/troubleshooting/](docs/troubleshooting/) for problems already hit and what fixed them.
+Feature parity with the Python app is reached, on the web and on the phone.
+
+| Where to look | For |
+| --- | --- |
+| [docs/deployment.md](docs/deployment.md) | running it |
+| [Packages/HomeBudgetiOS/README.md](Packages/HomeBudgetiOS/README.md) | the iOS app and its widget |
+| [AGENTS.md](AGENTS.md) | the conventions this repository holds to |
+| [docs/roadmap.md](docs/roadmap.md) | what is worth doing next, and what is deliberately not |
+| [docs/ci.md](docs/ci.md) | what CI covers, what it does not, and what a macOS runner costs |
+| [docs/releasing-and-costs.md](docs/releasing-and-costs.md) | getting the app onto a phone, the bill, and the Polish tax treatment |
+| [docs/troubleshooting/](docs/troubleshooting/) | problems already hit and what fixed them |
 
 ## Deliberate differences from the Python app
 

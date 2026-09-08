@@ -3,7 +3,9 @@
 Conventions an agent (or a person) has to know before changing anything here. Narrative context —
 why the project exists, what each package does — is in [README.md](README.md). Problems already hit
 and how they were solved are in [docs/troubleshooting/](docs/troubleshooting/); read the index there
-before debugging something that smells familiar.
+before debugging something that smells familiar. What is worth building next, and what has been
+deliberately ruled out, is in [docs/roadmap.md](docs/roadmap.md) — check it before proposing
+something that was already considered and rejected.
 
 ## Writing things down
 
@@ -15,6 +17,8 @@ Three places, and they do not overlap:
 | `AGENTS.md` (this file) | Rules and conventions. Short, imperative, no war stories. |
 | `docs/troubleshooting/*.md` | One file per area. Every problem that cost more than a few minutes: symptom, cause, fix, date. |
 | `HomeBudgetCore.docc` | The API reference, built by DocC from doc comments plus the catalog's articles. What a type *is*, not how the project is run. |
+| `docs/roadmap.md` | What is worth building next, and what has been ruled out and why. |
+| `docs/ci.md`, `docs/releasing-and-costs.md` | Research with a date on it. Re-check the numbers before acting on them. |
 
 **Every non-obvious problem gets an entry the same session it is solved.** A fix nobody can find
 again is worth about as much as no fix. Keep the format in
@@ -63,6 +67,26 @@ it has no other guardrail.
 Tests must not depend on process-wide mutable state. `DEV_MODE` is read from `Application` storage
 rather than the environment precisely because parallel suites raced on it.
 
+## Verifying
+
+Test the thing the way it actually runs. Two failures in this repository came from not doing that,
+and both looked like success at the time:
+
+- A service's `NODE_EXTRA_CA_CERTS` was checked by running `node` from an interactive shell, which
+  does not have the service's environment. The check passed; the service was still broken. Read the
+  value back from `/proc/<pid>/environ` instead of trusting a command you ran differently.
+- A reminder's due date was "verified" by reading the code that set it. The screen showed something
+  else entirely, because Reminders treats an alarm as the item's date. Look at the output, not at
+  the intent.
+
+**Prefer a controlled experiment to a plausible explanation.** When the wildcard certificate was
+rejected by iOS, the log named a reason — but the reason was only established by serving two
+certificates that differed in exactly one property and watching one work. If a diagnosis rests on a
+single line of output, it is a hypothesis.
+
+**Do not assert a version, price, API behaviour or platform limit from memory.** They move, and a
+confidently wrong number is worse than an admitted gap. Look it up, and cite where you looked.
+
 ## Build
 
 `make` on its own lists every target. Use it rather than raw `swift build` — the Makefile sets
@@ -88,7 +112,9 @@ network.
 Credentials live in Infisical. `.env` is local only and gitignored. Deployments fetch secrets into
 tmpfs at start; see `deploy/provision-secrets.sh`.
 
-Before pushing anything that touched configuration, run gitleaks over the working tree *and* the
+CI runs gitleaks on every pull request, because this repository is public and a secret that reaches
+a commit is a secret that is gone. That is a backstop, not permission to stop thinking: before
+pushing anything that touched configuration, run gitleaks over the working tree *and* the
 history. If something leaked, the password is rotated first and the history rewritten second — in
 that order, because a rewritten history does not un-leak a live credential.
 
@@ -102,6 +128,12 @@ The lab's documentation lives in `office-podman-services` and `office-proxmox-se
 let the aggregation pick it up.
 
 Log into lab hosts as the ordinary user documented there, never as root.
+
+**Before deleting anything shared, find out who points at it by path.** Refreshing a system trust
+store is not the same as satisfying a service that names a specific file in
+`NODE_EXTRA_CA_CERTS`, `SSL_CERT_FILE` or `--cacert`. Removing the old CA broke Uptime Kuma's
+monitors while `curl` in the same container kept working, because the two read different stores.
+Sweep the units and env files first; the sweep is in `office-proxmox-server/08-officelab-ca.md`.
 
 Deployment changes to shared infrastructure — the reverse proxy, the wildcard certificate, anything
 another service depends on — need the owner's explicit go-ahead, per change. Approval for one is not
