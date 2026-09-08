@@ -39,8 +39,39 @@
         /// variable bill, and cycles from fortnightly to yearly.
         static let today = CalendarDate.today()
 
-        static var expenses: [Expense] {
-            [
+        /// Mutable in develop mode, so the editor and the delete flow can be exercised without a
+        /// server. A shipped build has neither this nor the branches that call it.
+        ///
+        /// Main-actor isolated because it is shared mutable state and Swift 6 says so; every caller
+        /// is a view or a view model already.
+        @MainActor private static var edits: [Expense]?
+
+        @MainActor static func apply(_ input: ExpenseInput, editing id: String?) {
+            var all = expenses
+            let expense = Expense(
+                id: id ?? "dev-\(Int(Date().timeIntervalSince1970))",
+                name: input.name, amount: input.amount, frequency: input.frequency,
+                dueDay: input.dueDay, dueMonth: input.dueMonth, category: input.category,
+                lastPaidPeriod: id.flatMap { existing in
+                    all.first { $0.id == existing }?.lastPaidPeriod
+                } ?? "",
+                active: input.active, isVariable: input.isVariable)
+
+            if let id, let index = all.firstIndex(where: { $0.id == id }) {
+                all[index] = expense
+            } else {
+                all.append(expense)
+            }
+            edits = all
+        }
+
+        @MainActor static func remove(id: String) {
+            edits = expenses.filter { $0.id != id }
+        }
+
+        @MainActor static var expenses: [Expense] {
+            if let edits { return edits }
+            return [
                 Expense(
                     id: "1", name: "Kredyt hipoteczny", amount: 2450, frequency: .monthly,
                     dueDay: 1, category: "Kredyt i Ubezpieczenia"),
@@ -80,12 +111,12 @@
             ]
         }
 
-        static var dashboard: Dashboard {
+        @MainActor static var dashboard: Dashboard {
             DashboardBuilder.build(expenses: expenses, today: today)
         }
 
         /// Enough history on one bill for the price trend to have something to say.
-        static var payments: [PaymentRecord] {
+        @MainActor static var payments: [PaymentRecord] {
             let electricity = [198.40, 231.10, 245.50, 262.30]
             return electricity.enumerated().map { index, amount in
                 let month = max(1, today.month - electricity.count + index)
@@ -97,7 +128,7 @@
             }.reversed()
         }
 
-        static func priceHistory(expenseID: String) -> PriceHistory {
+        @MainActor static func priceHistory(expenseID: String) -> PriceHistory {
             PriceHistory.build(
                 expenseID: expenseID,
                 payments: payments.map {

@@ -67,6 +67,26 @@ public struct Dashboard: Codable, Hashable, Sendable {
 }
 
 /// Derives every figure the dashboard shows from the raw expense list, in one pass.
+extension Dashboard {
+    /// The bills still to be paid, soonest first.
+    ///
+    /// Paid and inactive expenses are left out: this answers "what is coming", and something
+    /// already settled is not. Overdue bills sort first because their `daysLeft` is negative, which
+    /// is what you want — the most overdue is the most urgent.
+    ///
+    /// Lives here rather than in the widget that first needed it, so the rule has a test.
+    public func upcoming(limit: Int) -> [ExpenseSummary] {
+        guard limit > 0 else { return [] }
+        return
+            expenses
+            .filter { $0.status != .paid && $0.status != .inactive }
+            .filter { $0.dueDate != nil && $0.daysLeft != nil }
+            .sorted { ($0.daysLeft ?? 0) < ($1.daysLeft ?? 0) }
+            .prefix(limit)
+            .map { $0 }
+    }
+}
+
 public enum DashboardBuilder {
     public static func build(expenses: [Expense], today: CalendarDate) -> Dashboard {
         var summaries: [Dashboard.ExpenseSummary] = []

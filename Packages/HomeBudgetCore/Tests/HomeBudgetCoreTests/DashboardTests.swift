@@ -137,3 +137,56 @@ struct DashboardTests {
         #expect(history.averageAmountPaid == 200)
     }
 }
+
+@Suite("Upcoming bills")
+struct UpcomingTests {
+    private let today = CalendarDate(year: 2026, month: 9, day: 8)
+
+    private func expense(
+        _ id: String, day: Int, paidPeriod: String = "", active: Bool = true
+    ) -> Expense {
+        Expense(
+            id: id, name: "Expense \(id)", amount: 100, frequency: .monthly, dueDay: day,
+            category: "Inne", lastPaidPeriod: paidPeriod, active: active)
+    }
+
+    @Test("Nearest first, and the most overdue before that")
+    func ordering() {
+        let dashboard = DashboardBuilder.build(
+            expenses: [expense("later", day: 20), expense("overdue", day: 1),
+                       expense("soon", day: 10)],
+            today: today)
+
+        #expect(dashboard.upcoming(limit: 5).map(\.expense.id) == ["overdue", "soon", "later"])
+    }
+
+    @Test("Paid and inactive bills are not upcoming")
+    func excluded() {
+        let dashboard = DashboardBuilder.build(
+            expenses: [expense("open", day: 20),
+                       expense("paid", day: 21, paidPeriod: "2026-09"),
+                       expense("off", day: 22, active: false)],
+            today: today)
+
+        #expect(dashboard.upcoming(limit: 5).map(\.expense.id) == ["open"])
+    }
+
+    @Test("The limit is honoured, and a non-positive one yields nothing")
+    func limits() {
+        let dashboard = DashboardBuilder.build(
+            expenses: (1...6).map { expense("\($0)", day: $0 + 10) }, today: today)
+
+        #expect(dashboard.upcoming(limit: 4).count == 4)
+        #expect(dashboard.upcoming(limit: 0).isEmpty)
+        #expect(dashboard.upcoming(limit: -1).isEmpty)
+    }
+
+    @Test("Every entry carries the date and countdown a caller needs")
+    func completeness() {
+        let dashboard = DashboardBuilder.build(expenses: [expense("a", day: 20)], today: today)
+        let first = try! #require(dashboard.upcoming(limit: 1).first)
+
+        #expect(first.dueDate == CalendarDate(year: 2026, month: 9, day: 20))
+        #expect(first.daysLeft == 12)
+    }
+}

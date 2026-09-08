@@ -156,7 +156,8 @@ under `Packages/Server/Resources/Fonts` (Bitstream Vera licence, which permits e
 - [x] Phase 3 — web client: dashboard, charts, calendar, dialogs, invoice attachments
 - [x] Phase 4 — CSV and PDF reports, e-mail alerts
 - [x] Phase 5 — container image, Quadlet units, CI
-- [ ] Phase 6 — native iOS/iPadOS app
+- [ ] Phase 6 — native iOS/iPadOS app: dashboard, charts, calendar, price history, payments,
+      expense editing, Reminders/Calendar export and a home-screen widget
 
 Feature parity with the Python app is reached. See [docs/deployment.md](docs/deployment.md) for
 running it, [AGENTS.md](AGENTS.md) for the conventions this repository holds to, and
