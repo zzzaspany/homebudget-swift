@@ -74,6 +74,23 @@ public enum UIString: String, CaseIterable, Sendable {
     case validationAmount
     case validationCategory
 
+    case tabMore
+    case sectionReports
+    case sectionSettings
+    case reportCSV
+    case reportPDF
+    case serverAddress
+    case serverAddressHint
+    case budgetLimit
+    case budgetNoLimit
+    case budgetOverBy
+    case remindersSyncPaid
+    case remindersSyncNone
+    case remindersSyncDone
+    case filterTitle
+    case filterClear
+    case emailSent
+
     case emptyExpenses
     case emptyAlerts
     case emptySinkingFunds
@@ -173,6 +190,23 @@ public enum UIString: String, CaseIterable, Sendable {
         .validationAmount: "Kwota musi być większa od zera.",
         .validationCategory: "Wybierz kategorię.",
 
+        .tabMore: "Więcej",
+        .sectionReports: "Raporty",
+        .sectionSettings: "Ustawienia",
+        .reportCSV: "Pobierz CSV",
+        .reportPDF: "Pobierz PDF",
+        .serverAddress: "Adres serwera",
+        .serverAddressHint: "Zmiana wymaga ponownego zalogowania.",
+        .budgetLimit: "Limit",
+        .budgetNoLimit: "Bez limitu",
+        .budgetOverBy: "przekroczono o",
+        .remindersSyncPaid: "Zapisz odhaczone jako wpłaty",
+        .remindersSyncNone: "Nic nie odhaczono.",
+        .remindersSyncDone: "Zapisano wpłat:",
+        .filterTitle: "Filtry",
+        .filterClear: "Wyczyść",
+        .emailSent: "Alerty wysłane.",
+
         .emptyExpenses: "Brak wydatków do wyświetlenia.",
         .emptyAlerts: "Nic nie wymaga uwagi.",
         .emptySinkingFunds: "Brak opłat wymagających rezerwy.",
@@ -261,6 +295,23 @@ public enum UIString: String, CaseIterable, Sendable {
         .validationName: "Give it a name.",
         .validationAmount: "The amount must be greater than zero.",
         .validationCategory: "Pick a category.",
+
+        .tabMore: "More",
+        .sectionReports: "Reports",
+        .sectionSettings: "Settings",
+        .reportCSV: "Download CSV",
+        .reportPDF: "Download PDF",
+        .serverAddress: "Server address",
+        .serverAddressHint: "Changing this means signing in again.",
+        .budgetLimit: "Limit",
+        .budgetNoLimit: "No limit",
+        .budgetOverBy: "over by",
+        .remindersSyncPaid: "Record ticked-off reminders as payments",
+        .remindersSyncNone: "Nothing was ticked off.",
+        .remindersSyncDone: "Payments recorded:",
+        .filterTitle: "Filters",
+        .filterClear: "Clear",
+        .emailSent: "Alerts sent.",
 
         .emptyExpenses: "No expenses to show.",
         .emptyAlerts: "Nothing needs attention.",

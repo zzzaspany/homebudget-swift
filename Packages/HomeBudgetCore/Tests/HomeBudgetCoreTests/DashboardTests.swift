@@ -190,3 +190,49 @@ struct UpcomingTests {
         #expect(first.daysLeft == 12)
     }
 }
+
+@Suite("Category budgets")
+struct CategoryBudgetTests {
+    @Test("A ceiling that is not set leaves the bar undrawn rather than empty")
+    func noLimit() {
+        let budget = CategoryBudget(category: "Inne", planned: 120, limit: nil)
+        #expect(budget.fraction == nil)
+        #expect(budget.isOverBudget == false)
+        #expect(budget.overspend == 0)
+    }
+
+    @Test("Spend under, at and over the ceiling")
+    func fractions() {
+        #expect(CategoryBudget(category: "a", planned: 50, limit: 200).fraction == 0.25)
+        #expect(CategoryBudget(category: "a", planned: 200, limit: 200).fraction == 1)
+        // Clamped, so the bar cannot overrun its track — the overspend is reported separately.
+        #expect(CategoryBudget(category: "a", planned: 300, limit: 200).fraction == 1)
+        #expect(CategoryBudget(category: "a", planned: 300, limit: 200).overspend == 100)
+        #expect(CategoryBudget(category: "a", planned: 300, limit: 200).isOverBudget)
+    }
+
+    @Test("A zero or negative ceiling is treated as unset, not as always exceeded")
+    func degenerateLimits() {
+        #expect(CategoryBudget(category: "a", planned: 10, limit: 0).fraction == nil)
+        #expect(CategoryBudget(category: "a", planned: 10, limit: 0).isOverBudget == false)
+        #expect(CategoryBudget(category: "a", planned: 10, limit: -5).isOverBudget == false)
+    }
+
+    @Test("Categories come back largest first, carrying their limits")
+    func ordering() {
+        let today = CalendarDate(year: 2026, month: 9, day: 8)
+        let dashboard = DashboardBuilder.build(
+            expenses: [
+                Expense(id: "1", name: "small", amount: 50, frequency: .monthly, dueDay: 1,
+                        category: "Inne"),
+                Expense(id: "2", name: "big", amount: 500, frequency: .monthly, dueDay: 1,
+                        category: "Podatki"),
+            ],
+            today: today)
+
+        let budgets = dashboard.categoryBudgets(limits: ["Podatki": 400])
+        #expect(budgets.map(\.category) == ["Podatki", "Inne"])
+        #expect(budgets[0].isOverBudget)
+        #expect(budgets[1].limit == nil)
+    }
+}

@@ -31,6 +31,7 @@ final class ReminderExport {
     /// there is nothing here worth putting on the server.
     private let identifiersKey = "reminderIdentifiers"
     private let listKey = "reminderListIdentifier"
+    private let lastSyncKey = "reminderLastSyncDate"
 
     private var identifiers: [String: String] {
         get { UserDefaults.standard.dictionary(forKey: identifiersKey) as? [String: String] ?? [:] }
@@ -103,6 +104,43 @@ final class ReminderExport {
         } catch {
             lastOutcome = .failed(error.localizedDescription)
         }
+    }
+
+    /// Expense identifiers whose reminder has been ticked off since the last time this was asked.
+    ///
+    /// This is what full access to Reminders was taken for. A recurring reminder that is completed
+    /// spawns its next occurrence, so "completed" is a moment rather than a state — the completion
+    /// date is compared against a high-water mark instead of the flag being trusted on its own.
+    func completedSinceLastSync() async -> [String] {
+        guard await requestAccess() else {
+            lastOutcome = .denied
+            return []
+        }
+
+        let since = UserDefaults.standard.object(forKey: lastSyncKey) as? Date ?? .distantPast
+        let known = identifiers
+        var paid: [String] = []
+        var newest = since
+
+        for (expenseID, identifier) in known {
+            guard
+                let reminder = EventKitBridge.store.calendarItem(withIdentifier: identifier)
+                    as? EKReminder,
+                let completed = reminder.completionDate
+            else { continue }
+
+            if completed > since {
+                paid.append(expenseID)
+                newest = max(newest, completed)
+            }
+        }
+
+        // Only moved when something was found, so a sync that finds nothing cannot swallow a
+        // completion that lands a moment later.
+        if !paid.isEmpty {
+            UserDefaults.standard.set(newest, forKey: lastSyncKey)
+        }
+        return paid
     }
 
     // MARK: - Details

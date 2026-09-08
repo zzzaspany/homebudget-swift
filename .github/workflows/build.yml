@@ -12,6 +12,22 @@ env:
   IMAGE: ${{ github.repository }}
 
 jobs:
+  # This repository is public, so a secret that reaches a commit is a secret that is gone. Cheaper
+  # to fail a pull request than to rotate a credential and rewrite history afterwards.
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # gitleaks compares against the base of the pull request, so it needs the history that
+          # a shallow clone would leave out.
+          fetch-depth: 0
+
+      - name: Scan for committed secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   test:
     runs-on: ubuntu-latest
     container: swift:6.3.3-noble
