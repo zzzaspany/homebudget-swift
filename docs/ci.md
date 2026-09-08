@@ -10,10 +10,30 @@ prices and free tiers move, so check them before acting on the numbers.
 | Job | Runner | What it proves |
 | --- | --- | --- |
 | `secrets` | ubuntu | gitleaks over the pull request's history |
+| `version` | ubuntu | `VERSION`, the iOS project and any `v*` tag agree |
+| `changes` | ubuntu | which of the slow jobs this change actually needs |
 | `test` | ubuntu, `swift:6.3.3-noble` | `HomeBudgetCore` and `Server` suites |
 | `web` | ubuntu, `swift:6.3.3-noble` | the client still compiles to WebAssembly |
-| `ios` | macos-26 | the iOS app and its widget still compile (~3 min) |
+| `ios` | macos-26 | the iOS app and its widget still compile |
 | `image` | ubuntu | builds and pushes the container image on `main` |
+
+## Why it was slow, and what was done
+
+Measured on run 34273958655: the `web` job took 6 min 58 s, of which **6 min 4 s was `swift build`**
+and 4 seconds was fetching the WebAssembly SDK. The compile is the entire cost; the SDK is not.
+
+Two changes:
+
+**The build directories are cached**, keyed on `Package.resolved` plus a hash of the sources, with
+looser restore keys so a source change still starts from a warm directory rather than nothing.
+
+**`web` and `ios` are skipped when nothing they cover has changed** — a pull request touching only
+documentation or only the iOS app has no way to break the WebAssembly build. Pushes to `main` and
+tags still run everything: the point is fast feedback while iterating, not thinner coverage on the
+branch that gets deployed.
+
+`test` deliberately still runs on every change. It is the business-logic contract, and it is the one
+job whose absence would let a real regression through.
 
 The `web` job earns its place for a reason worth stating: it is the only automated check that
 `HomeBudgetCore` has not quietly grown a Foundation dependency. A Foundation import compiles fine on
