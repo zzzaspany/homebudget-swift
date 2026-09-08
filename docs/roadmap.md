@@ -82,8 +82,8 @@ load-bearing in the schema, and it is much cheaper to face before there is data 
 
 ## Deliberately not doing
 
-**Publishing to the App Store.** Reviewers cannot reach a server behind a VPN and an internal CA, so
-it would be rejected, correctly. See [releasing-and-costs.md](releasing-and-costs.md).
+**Publishing to the App Store.** Reviewers cannot reach a server behind a VPN and an internal CA,
+so it would be rejected, correctly. The app is signed for the household's own devices instead.
 
 **fastlane.** It earns its keep on code signing across machines, store metadata and screenshots.
 None of those apply while the app is signed on one Mac and sold nowhere. Add it when builds start
