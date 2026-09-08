@@ -140,6 +140,10 @@ struct MainTabs: View {
         _selection = State(initialValue: start)
     }
 
+    @Environment(\.scenePhase) private var scenePhase
+    /// Expense identifiers whose reminder was ticked off while the app was away.
+    @State private var completed: [String] = []
+
     private var language: Language { .device }
 
     var body: some View {
@@ -158,5 +162,25 @@ struct MainTabs: View {
             }
         }
         .task { if model.dashboard == nil { await model.load() } }
+        // Ticking a reminder off is an explicit statement that the bill is paid, so noticing it
+        // without being asked is the point. Acting on it silently is not: this writes to the
+        // payment history, and a stray tap on a phone in a pocket should not create a payment.
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active, reminders.hasExported else { return }
+            Task { completed = await reminders.completedSinceLastSync() }
+        }
+        .alert(
+            UIString.remindersFoundTitle(language),
+            isPresented: Binding(get: { !completed.isEmpty }, set: { if !$0 { completed = [] } })
+        ) {
+            Button(UIString.remindersRecord(language)) {
+                let ids = completed
+                completed = []
+                Task { await model.recordPayments(forExpenses: ids) }
+            }
+            Button(UIString.remindersLater(language), role: .cancel) { completed = [] }
+        } message: {
+            Text("\(completed.count) — \(UIString.remindersFoundBody(language))")
+        }
     }
 }

@@ -94,6 +94,10 @@ public enum UIString: String, CaseIterable, Sendable {
     case notificationsDenied
     case notificationsScheduled
     case notificationsHint
+    case remindersFoundTitle
+    case remindersFoundBody
+    case remindersRecord
+    case remindersLater
 
     case emptyExpenses
     case emptyAlerts
@@ -214,6 +218,10 @@ public enum UIString: String, CaseIterable, Sendable {
         .notificationsDenied: "Brak zgody na powiadomienia. Włącz ją w Ustawieniach › Powiadomienia.",
         .notificationsScheduled: "Zaplanowano przypomnień:",
         .notificationsHint: "Powiadomienie przyjdzie tyle dni przed terminem, ile wynosi próg danego cyklu.",
+        .remindersFoundTitle: "Odhaczone przypomnienia",
+        .remindersFoundBody: "Zapisać je jako wpłaty?",
+        .remindersRecord: "Zapisz",
+        .remindersLater: "Nie teraz",
 
         .emptyExpenses: "Brak wydatków do wyświetlenia.",
         .emptyAlerts: "Nic nie wymaga uwagi.",
@@ -324,6 +332,10 @@ public enum UIString: String, CaseIterable, Sendable {
         .notificationsDenied: "Notifications are not permitted. Allow them in Settings › Notifications.",
         .notificationsScheduled: "Warnings scheduled:",
         .notificationsHint: "The warning arrives as many days ahead as that cycle's own threshold.",
+        .remindersFoundTitle: "Ticked-off reminders",
+        .remindersFoundBody: "Record them as payments?",
+        .remindersRecord: "Record",
+        .remindersLater: "Not now",
 
         .emptyExpenses: "No expenses to show.",
         .emptyAlerts: "Nothing needs attention.",
