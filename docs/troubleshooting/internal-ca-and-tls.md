@@ -49,8 +49,21 @@ year from now.
 be validated against a bundled copy of the root with `SecTrustSetAnchorCertificates`. This fixes
 only this app. Safari and every other lab service stay broken on the phone. Prefer reissuing.
 
-*Hit 2026-09-08. Certificate reissue not yet done — pending the owner's go-ahead, because the
-wildcard is shared by every service on office.lab.*
+**Confirmed by experiment, not just by reading the log.** Two certificates issued from the same
+root, with the same key, for the same hostname, served from the same process, differing only in
+validity: 397 days and 3650. On iOS 26 the first loads without a warning and the second is refused.
+The validity period is the only variable, so the diagnosis holds.
+
+*Hit 2026-09-08, resolved the same day.* The original root's private key turned out to be
+unrecoverable — it was not in Infisical, on the Podman host, or in the Mac keychain, which held the
+certificate without its key — so a new root (`OfficeLab Root CA 2026`) was minted and a 397-day
+wildcard issued from it. Both live in Infisical under Proxmox Services / `npm-prd`. The runbook and
+the yearly reissue script are in `office-proxmox-server` (`08-officelab-ca.md`); do not duplicate
+them here.
+
+**Not deployed yet.** Nginx Proxy Manager still serves the old certificate, so the iOS app still
+cannot sign in. Going live means distributing the new root to every device and container that
+validates office.lab TLS — the runbook lists them.
 
 ## Diagnosing "is it the certificate or the trust store"
 
