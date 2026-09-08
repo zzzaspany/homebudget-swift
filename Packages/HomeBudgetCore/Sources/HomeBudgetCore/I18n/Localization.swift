@@ -74,6 +74,21 @@ public enum Localization {
         language == .pl ? name : (categoryPLtoEN[name] ?? name)
     }
 
+    /// The categories a picker offers, in the order they are usually thought about — the roof over
+    /// your head first, discretionary reserves last.
+    ///
+    /// The field is free text and the server accepts anything non-empty, so this is a convenience
+    /// rather than a constraint. An expense already carrying a category outside this list keeps it.
+    public static let knownCategories = [
+        "Kredyt i Ubezpieczenia",
+        "Stałe Opłaty",
+        "Media i Eksploatacja",
+        "Podatki",
+        "Serwisy i Przeglądy",
+        "Bufor i Rezerwy",
+        "Inne",
+    ]
+
     // MARK: - Notifications
 
     public static func notificationMessage(

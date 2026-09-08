@@ -172,9 +172,3 @@ extension Color {
     ]
 }
 
-extension Language {
-    /// The device's language, falling back to Polish for anything the app does not translate.
-    static var device: Language {
-        Language(code: Locale.current.language.languageCode?.identifier)
-    }
-}

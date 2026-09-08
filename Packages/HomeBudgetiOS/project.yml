@@ -16,12 +16,19 @@ targets:
     type: application
     platform: iOS
     sources:
+      # The widget is its own target and carries its own @main; compiling it into the app too would
+      # give the app two entry points.
       - path: Sources
+        excludes:
+          - "Widget/**"
+          - "*.entitlements"
     dependencies:
       - package: HomeBudgetCore
+      - target: HomeBudgetWidget
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: lab.office.homebudget
+        CODE_SIGN_ENTITLEMENTS: Sources/HomeBudget.entitlements
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "6.0"
@@ -54,3 +61,28 @@ targets:
         # Calendar, by contrast, is only ever written to, one event at a time and only when asked.
         NSCalendarsWriteOnlyAccessUsageDescription: >-
           Aby dodać termin płatności do Kalendarza.
+
+  # The widget runs in its own process and cannot see the app's container, so the two share an app
+  # group. It reads a snapshot the app leaves there rather than calling the API itself.
+  HomeBudgetWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Sources/Widget
+      - path: Sources/Shared
+    dependencies:
+      - package: HomeBudgetCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: lab.office.homebudget.widget
+        CODE_SIGN_ENTITLEMENTS: Sources/HomeBudgetWidget.entitlements
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleDisplayName: HomeBudget
+    info:
+      path: Sources/Widget/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension

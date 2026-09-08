@@ -1,5 +1,6 @@
 import HomeBudgetCore
 import SwiftUI
+import WidgetKit
 
 @MainActor
 @Observable
@@ -21,6 +22,7 @@ final class DashboardModel {
             if DevelopMode.isOn {
                 dashboard = DevelopMode.dashboard
                 payments = DevelopMode.payments
+                publishToWidget()
                 return
             }
         #endif
@@ -33,6 +35,65 @@ final class DashboardModel {
             self.dashboard = try await dashboard
             self.payments = try await payments
             errorMessage = nil
+            publishToWidget()
+        } catch APIError.signedOut {
+            await session.signOut()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Creates or updates, depending on whether an identifier came with it.
+    ///
+    /// In develop mode the change is applied to the sample data instead, so the form can be worked
+    /// on without a server or a sign-in behind it.
+    /// Hands the widget a fresh snapshot and asks the system to redraw it.
+    ///
+    /// Called on every path that changes the dashboard, so the tile never lags behind the screen
+    /// the user just looked at.
+    private func publishToWidget() {
+        guard let dashboard else { return }
+        SharedStore.write(UpcomingSnapshot.from(dashboard))
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    func save(_ input: ExpenseInput, editing id: String?) async {
+        #if DEBUG
+            if DevelopMode.isOn {
+                DevelopMode.apply(input, editing: id)
+                dashboard = DevelopMode.dashboard
+                publishToWidget()
+                return
+            }
+        #endif
+
+        do {
+            if let id {
+                try await client.updateExpense(id: id, input)
+            } else {
+                try await client.createExpense(input)
+            }
+            await load()
+        } catch APIError.signedOut {
+            await session.signOut()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func delete(_ expense: Expense) async {
+        #if DEBUG
+            if DevelopMode.isOn {
+                DevelopMode.remove(id: expense.id)
+                dashboard = DevelopMode.dashboard
+                publishToWidget()
+                return
+            }
+        #endif
+
+        do {
+            try await client.deleteExpense(id: expense.id)
+            await load()
         } catch APIError.signedOut {
             await session.signOut()
         } catch {
@@ -62,6 +123,8 @@ struct DashboardScreen: View {
     @State private var payTarget: Expense?
     @State private var historyTarget: Expense?
     @State private var calendarTarget: Dashboard.ExpenseSummary?
+    @State private var editorTarget: EditorTarget?
+    @State private var deleteTarget: Expense?
     @State private var reminders = ReminderExport()
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -115,6 +178,11 @@ struct DashboardScreen: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button(UIString.actionAdd(language), systemImage: "plus") {
+                        editorTarget = EditorTarget(expense: nil)
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button(UIString.actionRefresh(language), systemImage: "arrow.clockwise") {
                             Task { await model.load() }
@@ -160,6 +228,30 @@ struct DashboardScreen: View {
             }
             .sheet(item: $historyTarget) { expense in
                 PriceHistoryScreen(expense: expense, session: session)
+            }
+            .sheet(item: $editorTarget) { target in
+                ExpenseEditor(existing: target.expense) { input in
+                    Task { await model.save(input, editing: target.expense?.id) }
+                }
+            }
+            // A real binding, not `.constant`: dismissing by tapping outside has to clear the
+            // target too, or the dialog comes straight back.
+            .confirmationDialog(
+                UIString.deleteConfirmTitle(language),
+                isPresented: Binding(
+                    get: { deleteTarget != nil },
+                    set: { if !$0 { deleteTarget = nil } }),
+                titleVisibility: .visible
+            ) {
+                Button(UIString.actionDelete(language), role: .destructive) {
+                    if let expense = deleteTarget {
+                        Task { await model.delete(expense) }
+                    }
+                    deleteTarget = nil
+                }
+                Button(UIString.actionCancel(language), role: .cancel) { deleteTarget = nil }
+            } message: {
+                Text(UIString.deleteConfirmMessage(language))
             }
             .sheet(item: $calendarTarget) { summary in
                 if let due = summary.dueDate {
@@ -278,7 +370,9 @@ struct DashboardScreen: View {
                             guard await CalendarAccess.request() else { return }
                             calendarTarget = summary
                         }
-                    })
+                    },
+                    onEdit: { editorTarget = EditorTarget(expense: summary.expense) },
+                    onDelete: { deleteTarget = summary.expense })
             }
         }
     }
@@ -290,6 +384,8 @@ struct ExpenseRow: View {
     let onPay: () -> Void
     let onHistory: () -> Void
     let onAddToCalendar: () -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -329,6 +425,9 @@ struct ExpenseRow: View {
         .contextMenu {
             Button(UIString.actionHistory(language), systemImage: "chart.line.uptrend.xyaxis", action: onHistory)
             Button(UIString.actionAddToCalendar(language), systemImage: "calendar.badge.plus", action: onAddToCalendar)
+            Divider()
+            Button(UIString.actionEdit(language), systemImage: "pencil", action: onEdit)
+            Button(UIString.actionDelete(language), systemImage: "trash", role: .destructive, action: onDelete)
         }
     }
 }
@@ -355,4 +454,12 @@ struct StatusBadge: View {
             .background(color.opacity(0.16), in: .capsule)
             .foregroundStyle(color)
     }
+}
+
+
+/// Wraps the editor's subject so `sheet(item:)` can tell "add" from "edit" — a nil expense is a
+/// valid state for the sheet, which an optional binding alone cannot express.
+struct EditorTarget: Identifiable {
+    let expense: Expense?
+    var id: String { expense?.id ?? "new" }
 }

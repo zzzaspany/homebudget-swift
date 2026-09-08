@@ -52,6 +52,25 @@ macOS does not enforce this, which is why the same URL loads fine from a Mac. Se
 [docs/troubleshooting/internal-ca-and-tls.md](../../docs/troubleshooting/internal-ca-and-tls.md);
 the fix is to reissue the leaf, not to change anything here.
 
+## What it does
+
+The dashboard, charts, a month calendar, price history, recording a payment, and full editing of the
+recurring expenses — add, change and delete, with the same validation the server applies so the form
+does not have to wait for a round trip to say the amount is missing.
+
+## The widget
+
+A home-screen tile showing the next bills due and how many days are left. Small shows one, medium
+shows three; overdue counts up in red, "due soon" in orange.
+
+It does **not** call the API. A widget runs in its own short-lived process with no Authelia cookie,
+so the app writes a small snapshot into a shared app group whenever the dashboard changes, and the
+extension reads that. The timeline refreshes just after midnight, because the number of days left is
+the only thing that changes on its own and it changes once a day.
+
+Which bills count as upcoming is decided in `HomeBudgetCore` (`Dashboard.upcoming(limit:)`), not in
+the widget, so the rule has tests.
+
 ## Reminders and Calendar
 
 The recurring expenses can be mirrored into Apple Reminders, on a list of their own called

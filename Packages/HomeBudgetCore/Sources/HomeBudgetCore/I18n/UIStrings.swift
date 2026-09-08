@@ -62,6 +62,18 @@ public enum UIString: String, CaseIterable, Sendable {
     case remindersRemoved
     case remindersDenied
 
+    case addExpenseTitle
+    case editExpenseTitle
+    case fieldDueDay
+    case fieldDueMonth
+    case fieldActive
+    case fieldVariable
+    case deleteConfirmTitle
+    case deleteConfirmMessage
+    case validationName
+    case validationAmount
+    case validationCategory
+
     case emptyExpenses
     case emptyAlerts
     case emptySinkingFunds
@@ -149,6 +161,18 @@ public enum UIString: String, CaseIterable, Sendable {
         .remindersRemoved: "Usunięto z Przypomnień",
         .remindersDenied: "Brak dostępu do Przypomnień. Włącz go w Ustawieniach › Prywatność.",
 
+        .addExpenseTitle: "Nowy wydatek",
+        .editExpenseTitle: "Edytuj wydatek",
+        .fieldDueDay: "Dzień miesiąca",
+        .fieldDueMonth: "Miesiąc",
+        .fieldActive: "Aktywny",
+        .fieldVariable: "Rachunek zmienny",
+        .deleteConfirmTitle: "Usunąć ten wydatek?",
+        .deleteConfirmMessage: "Historia wpłat zostanie zachowana.",
+        .validationName: "Podaj nazwę.",
+        .validationAmount: "Kwota musi być większa od zera.",
+        .validationCategory: "Wybierz kategorię.",
+
         .emptyExpenses: "Brak wydatków do wyświetlenia.",
         .emptyAlerts: "Nic nie wymaga uwagi.",
         .emptySinkingFunds: "Brak opłat wymagających rezerwy.",
@@ -225,6 +249,18 @@ public enum UIString: String, CaseIterable, Sendable {
         .remindersUpdated: "Reminders updated",
         .remindersRemoved: "Removed from Reminders",
         .remindersDenied: "No access to Reminders. Grant it in Settings › Privacy.",
+
+        .addExpenseTitle: "New expense",
+        .editExpenseTitle: "Edit expense",
+        .fieldDueDay: "Day of month",
+        .fieldDueMonth: "Month",
+        .fieldActive: "Active",
+        .fieldVariable: "Variable bill",
+        .deleteConfirmTitle: "Delete this expense?",
+        .deleteConfirmMessage: "Its payment history is kept.",
+        .validationName: "Give it a name.",
+        .validationAmount: "The amount must be greater than zero.",
+        .validationCategory: "Pick a category.",
 
         .emptyExpenses: "No expenses to show.",
         .emptyAlerts: "Nothing needs attention.",
