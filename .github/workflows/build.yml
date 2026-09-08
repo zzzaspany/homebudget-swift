@@ -60,8 +60,40 @@ jobs:
         working-directory: Packages/WebClient
         run: swift build --swift-sdk swift-6.3.3-RELEASE_wasm -c release
 
+  # The iOS app and its widget are the largest package here and nothing else compiles them. Free on
+  # a public repository: GitHub's hosted macOS runners are unmetered for those.
+  ios:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use the newest Xcode on the image
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      # The project is generated rather than committed, so CI has to make it the same way a person
+      # does — which also proves project.yml still describes a buildable project.
+      - name: Generate the Xcode project
+        working-directory: Packages/HomeBudgetiOS
+        run: xcodegen
+
+      # A generic destination, not a named device: a runner image update that retires
+      # "iPhone 17 Pro" would otherwise break the build for a reason that has nothing to do with
+      # the change under test. Simulator builds sign locally, so no certificates are needed.
+      - name: Build the app and the widget
+        working-directory: Packages/HomeBudgetiOS
+        run: |
+          xcodebuild -project HomeBudget.xcodeproj -scheme HomeBudget \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            build
+
   image:
-    needs: [test, web]
+    needs: [test, web, ios]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
