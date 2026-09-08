@@ -1,3 +1,4 @@
+/// The two languages the interface and the reports are written in.
 public enum Language: String, Codable, CaseIterable, Sendable {
     case pl
     case en
@@ -10,6 +11,11 @@ public enum Language: String, Codable, CaseIterable, Sendable {
     var groupingSeparator: String { self == .pl ? "\u{00A0}" : "," }
 }
 
+/// Number and currency formatting, written by hand.
+///
+/// `NumberFormatter` would mean importing Foundation, which this module deliberately does
+/// not — see the module overview. Polish groups with a non-breaking space and suffixes
+/// `zł`; English groups with a comma and prefixes `PLN`.
 public enum NumberFormatting {
     /// Formats an amount with two decimals and thousands grouping.
     ///

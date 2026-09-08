@@ -47,7 +47,7 @@ endef
 .DEFAULT_GOAL := help
 .PHONY: help build core server web test test-core test-server run migrate revert \
         image image-run image-push image-remote image-remote-push shell db-psql db-backup db-reset \
-        ios ios-open ios-build ios-run lint clean clean-all doctor
+        ios ios-open ios-build ios-run docs docs-open docs-html lint clean clean-all doctor
 
 # --- Help --------------------------------------------------------------------
 
@@ -98,6 +98,35 @@ ios-run: ios-build ## Build, install and launch on the simulator
 	@app=$$(find $(SCRATCH)/ios -name HomeBudget.app -path '*Debug-iphonesimulator*' | head -1); \
 		xcrun simctl install "$(IOS_SIMULATOR)" "$$app" && \
 		xcrun simctl launch "$(IOS_SIMULATOR)" $(IOS_BUNDLE_ID)
+
+# --- Documentation -----------------------------------------------------------
+
+# DocC, Apple's own documentation compiler. Driven through xcodebuild rather than
+# swift-docc-plugin so HomeBudgetCore's manifest gains no dependency — it is resolved by the
+# WebAssembly build too, where a documentation plugin has no business being.
+DOCS_ARCHIVE := $(SCRATCH)/docs/Build/Products/Debug/HomeBudgetCore.doccarchive
+
+docs: ## Build the HomeBudgetCore documentation
+	cd Packages/HomeBudgetCore && xcodebuild docbuild -scheme HomeBudgetCore \
+		-destination 'platform=macOS' -derivedDataPath $(SCRATCH)/docs -quiet
+	@echo "Built $(DOCS_ARCHIVE)"
+
+docs-open: docs ## Build the documentation and open it in Xcode
+	open $(DOCS_ARCHIVE)
+
+# Rewritten for a plain web server: no server-side routing, and every link relative to the
+# subdirectory it will be served from.
+#
+# Written outside the repository by default, like every other build output here — it is five
+# megabytes of small files, and this checkout lives on an SMB share where that takes minutes.
+# Override with DOCS_SITE=... to put it somewhere publishable.
+DOCS_SITE ?= $(SCRATCH)/docs-site
+
+docs-html: docs ## Export the documentation as a static site (DOCS_SITE=... to choose where)
+	@rm -rf $(DOCS_SITE)
+	xcrun docc process-archive transform-for-static-hosting $(DOCS_ARCHIVE) \
+		--output-path $(DOCS_SITE) --hosting-base-path homebudget-swift/docs
+	@echo "Static site in $(DOCS_SITE)"
 
 # --- Testing -----------------------------------------------------------------
 

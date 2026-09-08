@@ -14,6 +14,7 @@ Three places, and they do not overlap:
 | `README.md` | What the project is and how to run it. Written for someone who has never seen it. |
 | `AGENTS.md` (this file) | Rules and conventions. Short, imperative, no war stories. |
 | `docs/troubleshooting/*.md` | One file per area. Every problem that cost more than a few minutes: symptom, cause, fix, date. |
+| `HomeBudgetCore.docc` | The API reference, built by DocC from doc comments plus the catalog's articles. What a type *is*, not how the project is run. |
 
 **Every non-obvious problem gets an entry the same session it is solved.** A fix nobody can find
 again is worth about as much as no fix. Keep the format in
@@ -22,6 +23,10 @@ next person searches for — then cause, then fix, then the date.
 
 Do not write a troubleshooting entry for something the code already makes obvious, and do not
 restate README prose. Link to it instead.
+
+Every public type in `HomeBudgetCore` carries a doc comment — it is the module three front ends
+share, so a summary line is the least it owes them. `make docs` must build without DocC warnings;
+an unresolved symbol link is a broken reference, not a cosmetic one.
 
 ## Code
 

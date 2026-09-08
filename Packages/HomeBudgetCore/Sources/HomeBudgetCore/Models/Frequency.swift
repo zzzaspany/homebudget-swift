@@ -1,3 +1,7 @@
+/// How often a bill falls due.
+///
+/// Each cycle carries its own proration, its own warning distance and its own period
+/// format, so adding a sixth means answering all three.
 public enum Frequency: String, Codable, CaseIterable, Sendable {
     case monthly
     case biweekly

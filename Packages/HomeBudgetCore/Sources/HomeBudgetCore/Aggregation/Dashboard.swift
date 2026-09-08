@@ -66,6 +66,7 @@ public struct Dashboard: Codable, Hashable, Sendable {
     }
 }
 
+/// Derives every figure the dashboard shows from the raw expense list, in one pass.
 public enum DashboardBuilder {
     public static func build(expenses: [Expense], today: CalendarDate) -> Dashboard {
         var summaries: [Dashboard.ExpenseSummary] = []

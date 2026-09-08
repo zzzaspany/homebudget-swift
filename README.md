@@ -32,6 +32,7 @@ make doctor   # check the toolchains, runtime and database this project expects
 make build    # all three packages
 make test     # every suite
 make run      # serve on http://localhost:8000, reading .env
+make docs     # build the HomeBudgetCore reference with DocC
 make image    # build the container image
 ```
 
@@ -123,6 +124,23 @@ leaning on `Calendar` and `NumberFormatter`. The release bundle is 12 MB, 2.3 MB
 
 Charts are SVG built in Swift, and the month calendar's layout lives in `HomeBudgetCore` so the iOS
 app can reuse it.
+
+## Documentation
+
+The domain module carries a DocC reference — Apple's own documentation compiler, which reads the
+doc comments and the catalog under
+`Packages/HomeBudgetCore/Sources/HomeBudgetCore/HomeBudgetCore.docc` and produces a browsable
+reference with the business rules written up as an article beside the symbols.
+
+```bash
+make docs        # build the archive
+make docs-open   # and open it in Xcode
+make docs-html   # export a static site, for serving anywhere
+```
+
+It is driven through `xcodebuild docbuild` rather than swift-docc-plugin so that
+`HomeBudgetCore`'s manifest gains no dependency — that manifest is resolved by the WebAssembly
+build too, where a documentation plugin has no business being.
 
 ## Reports
 
