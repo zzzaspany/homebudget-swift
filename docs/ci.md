@@ -12,7 +12,7 @@ prices and free tiers move, so check them before acting on the numbers.
 | `secrets` | ubuntu | gitleaks over the pull request's history |
 | `test` | ubuntu, `swift:6.3.3-noble` | `HomeBudgetCore` and `Server` suites |
 | `web` | ubuntu, `swift:6.3.3-noble` | the client still compiles to WebAssembly |
-| `ios` | macos-26 | the iOS app and its widget still compile |
+| `ios` | macos-26 | the iOS app and its widget still compile (~3 min) |
 | `image` | ubuntu | builds and pushes the container image on `main` |
 
 The `web` job earns its place for a reason worth stating: it is the only automated check that
@@ -80,10 +80,13 @@ and a `Fastfile` to keep current for no gain.
 `HomeBudgetiOS` is built but not tested, because it has no test target — see the paragraph above for
 why that is deliberate rather than an omission.
 
-The `ios` job selects `/Applications/Xcode.app` explicitly and prints the version. If the image ever
-ships an Xcode too old for the iOS 26 deployment target, that line is where it will be obvious;
-pinning a specific Xcode with `xcode-select -s /Applications/Xcode_26.x.app` is the fix, at the cost
-of having to bump it by hand.
+The `ios` job selects `/Applications/Xcode.app` explicitly and prints the version — **Xcode 26.6
+(17F113)** on the image as of September 2026, comfortably new enough for the iOS 26 deployment
+target. If the image ever ships one too old, that printed line is where it will be obvious; pinning
+with `xcode-select -s /Applications/Xcode_26.x.app` is the fix, at the cost of bumping it by hand.
+
+The job takes about three minutes, which is faster than either Linux Swift job — the macOS runner is
+not the bottleneck people expect it to be at this size.
 
 ## Sources
 
