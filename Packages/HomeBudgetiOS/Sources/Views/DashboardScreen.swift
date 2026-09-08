@@ -61,6 +61,15 @@ struct DashboardScreen: View {
     let model: DashboardModel
     @State private var payTarget: Expense?
     @State private var historyTarget: Expense?
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    /// Two columns on a phone, four across an iPad. An adaptive grid packs the cards against the
+    /// leading edge at their minimum width instead of spreading them, which left most of an iPad's
+    /// width empty and wrapped the amounts onto two lines.
+    private var summaryColumns: [GridItem] {
+        let count = sizeClass == .regular ? 4 : 2
+        return Array(repeating: GridItem(.flexible(), spacing: 16), count: count)
+    }
 
     private var language: Language { .device }
 
@@ -130,7 +139,7 @@ struct DashboardScreen: View {
     /// separate glass views would each refract independently and the row would look busy.
     private func summary(_ kpis: Dashboard.KPIs) -> some View {
         GlassEffectContainer(spacing: 16) {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 16)], spacing: 16) {
+            LazyVGrid(columns: summaryColumns, spacing: 16) {
                 figure(UIString.kpiMonthlyBudget(language),
                        NumberFormatting.currency(kpis.proRatedMonthly, language: language),
                        tint: .accentColor)
@@ -152,6 +161,8 @@ struct DashboardScreen: View {
                 .foregroundStyle(.secondary)
             Text(value)
                 .font(.title2.bold())
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
