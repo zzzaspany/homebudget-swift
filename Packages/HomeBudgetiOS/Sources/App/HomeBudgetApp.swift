@@ -146,6 +146,14 @@ struct MainTabs: View {
 
     private var language: Language { .device }
 
+    /// Ticking a reminder off is an explicit statement that the bill is paid, so noticing it
+    /// without being asked is the point. Acting on it silently is not: this writes to the payment
+    /// history, and a stray tap on a phone in a pocket should not create a payment.
+    private func checkReminders() async {
+        guard reminders.hasExported else { return }
+        completed = await reminders.completedSinceLastSync()
+    }
+
     var body: some View {
         TabView(selection: $selection) {
             Tab(UIString.sectionExpenses(language), systemImage: "list.bullet", value: .expenses) {
@@ -161,13 +169,17 @@ struct MainTabs: View {
                 MoreScreen(session: session, model: model, reminders: reminders)
             }
         }
-        .task { if model.dashboard == nil { await model.load() } }
-        // Ticking a reminder off is an explicit statement that the bill is paid, so noticing it
-        // without being asked is the point. Acting on it silently is not: this writes to the
-        // payment history, and a stray tap on a phone in a pocket should not create a payment.
+        .task {
+            if model.dashboard == nil { await model.load() }
+            await checkReminders()
+        }
+        // Both, deliberately. A cold launch is already `.active` by the time this view exists, so
+        // `onChange` never fires for it — the first version checked only here and silently did
+        // nothing on every launch, which is exactly the case that matters after ticking something
+        // off and reopening the app.
         .onChange(of: scenePhase) { _, phase in
-            guard phase == .active, reminders.hasExported else { return }
-            Task { completed = await reminders.completedSinceLastSync() }
+            guard phase == .active else { return }
+            Task { await checkReminders() }
         }
         .alert(
             UIString.remindersFoundTitle(language),
