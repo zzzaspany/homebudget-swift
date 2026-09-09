@@ -94,6 +94,10 @@ public enum UIString: String, CaseIterable, Sendable {
     case notificationsDenied
     case notificationsScheduled
     case notificationsHint
+    case suggestionUse
+    case suggestionSameMonth
+    case suggestionSameMonthAverage
+    case suggestionOverallAverage
     case remindersFoundTitle
     case remindersFoundBody
     case remindersRecord
@@ -218,6 +222,10 @@ public enum UIString: String, CaseIterable, Sendable {
         .notificationsDenied: "Brak zgody na powiadomienia. Włącz ją w Ustawieniach › Powiadomienia.",
         .notificationsScheduled: "Zaplanowano przypomnień:",
         .notificationsHint: "Powiadomienie przyjdzie tyle dni przed terminem, ile wynosi próg danego cyklu.",
+        .suggestionUse: "Wstaw",
+        .suggestionSameMonth: "tyle samo co w tym miesiącu rok temu",
+        .suggestionSameMonthAverage: "średnia z tego miesiąca w poprzednich latach",
+        .suggestionOverallAverage: "średnia ze wszystkich wpłat",
         .remindersFoundTitle: "Odhaczone przypomnienia",
         .remindersFoundBody: "Zapisać je jako wpłaty?",
         .remindersRecord: "Zapisz",
@@ -332,6 +340,10 @@ public enum UIString: String, CaseIterable, Sendable {
         .notificationsDenied: "Notifications are not permitted. Allow them in Settings › Notifications.",
         .notificationsScheduled: "Warnings scheduled:",
         .notificationsHint: "The warning arrives as many days ahead as that cycle's own threshold.",
+        .suggestionUse: "Use",
+        .suggestionSameMonth: "what this month cost a year ago",
+        .suggestionSameMonthAverage: "average for this month in earlier years",
+        .suggestionOverallAverage: "average of every payment",
         .remindersFoundTitle: "Ticked-off reminders",
         .remindersFoundBody: "Record them as payments?",
         .remindersRecord: "Record",

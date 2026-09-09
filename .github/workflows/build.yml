@@ -49,11 +49,45 @@ jobs:
           esac
           grep -q "^## \[$file\]" CHANGELOG.md || echo "::warning::CHANGELOG.md has no section for $file"
 
+  # Which of the slow jobs a pull request actually needs. Pushes to main and tags run everything
+  # regardless — the point of skipping is fast feedback while iterating, not thinner coverage on
+  # the branch that gets deployed.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      ios: ${{ steps.filter.outputs.ios }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            web:
+              - 'Packages/WebClient/**'
+              - 'Packages/HomeBudgetCore/**'
+              - 'Containerfile'
+              - '.github/workflows/build.yml'
+            ios:
+              - 'Packages/HomeBudgetiOS/**'
+              - 'Packages/HomeBudgetCore/**'
+              - '.github/workflows/build.yml'
+
   test:
     runs-on: ubuntu-latest
     container: swift:6.3.3-noble
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            Packages/HomeBudgetCore/.build
+            Packages/Server/.build
+          key: linux-${{ hashFiles('Packages/*/Package.resolved') }}-${{ hashFiles('Packages/*/Sources/**/*.swift') }}
+          restore-keys: |
+            linux-${{ hashFiles('Packages/*/Package.resolved') }}-
+            linux-
 
       - name: Test the domain core
         working-directory: Packages/HomeBudgetCore
@@ -64,10 +98,22 @@ jobs:
         run: swift test
 
   web:
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     container: swift:6.3.3-noble
     steps:
       - uses: actions/checkout@v4
+
+      # The compile is the whole cost of this job — six minutes of it, against four seconds to
+      # fetch the SDK. Caching the build directory is what makes the check cheap enough to keep.
+      - uses: actions/cache@v4
+        with:
+          path: Packages/WebClient/.build
+          key: wasm-${{ hashFiles('Packages/WebClient/Package.resolved') }}-${{ hashFiles('Packages/*/Sources/**/*.swift') }}
+          restore-keys: |
+            wasm-${{ hashFiles('Packages/WebClient/Package.resolved') }}-
+            wasm-
 
       # Compiling the client to WebAssembly is the check that HomeBudgetCore stays free of
       # Foundation and other host-only dependencies.
@@ -84,6 +130,8 @@ jobs:
   # The iOS app and its widget are the largest package here and nothing else compiles them. Free on
   # a public repository: GitHub's hosted macOS runners are unmetered for those.
   ios:
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.ios == 'true'
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
@@ -115,7 +163,12 @@ jobs:
 
   image:
     needs: [version, test, web, ios]
-    if: github.event_name == 'push'
+    # A skipped dependency is not a failed one. Pushes run every job anyway, so in practice this
+    # only matters if the filter is ever loosened.
+    if: |
+      github.event_name == 'push' &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
     permissions:
       contents: read
