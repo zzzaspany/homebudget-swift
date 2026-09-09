@@ -76,6 +76,23 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container: swift:6.3.3-noble
+    # The API suite talks to a real database. It reads TEST_DATABASE_URL and never DATABASE_URL —
+    # the repository's .env points that at the live household database, and a suite that truncates
+    # tables must not be one typo away from it.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: homebudget
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: homebudget_test
+        options: >-
+          --health-cmd "pg_isready -U homebudget"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://homebudget:test@postgres:5432/homebudget_test
     steps:
       - uses: actions/checkout@v4
 

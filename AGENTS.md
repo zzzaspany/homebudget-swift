@@ -64,6 +64,10 @@ so far. Do not add a third silently.
 stamping needs a test case before it is considered done — that is the whole business contract and
 it has no other guardrail.
 
+The API suite talks to a real database and reads **`TEST_DATABASE_URL`**, never `DATABASE_URL`.
+`.env` points the latter at the live household database, and these tests truncate tables. There is
+no fallback and there must not be one; unset, the suite reports as skipped.
+
 Tests must not depend on process-wide mutable state. `DEV_MODE` is read from `Application` storage
 rather than the environment precisely because parallel suites raced on it.
 
