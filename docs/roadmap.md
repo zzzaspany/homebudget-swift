@@ -26,14 +26,14 @@ would remind anyone. That was wrong, and checking took two minutes: Uptime Kuma 
 `tlsExpiryNotifyDays = [7,14,21]`, an active default notification channel, and currently reports 396
 days remaining on the `office.lab` wildcard. The warning will arrive.
 
-What is *not* covered: **`rachunki.office.lab` has no monitor at all**, and five monitors — including
-**Authelia**, whose failure takes every other service with it — have no notification attached, so
-their alerts go nowhere. Both are worth fixing in the Kuma UI; a new monitor picks up the
-notification automatically because the channel is marked default.
+**HomeBudget is deliberately not monitored in Kuma.** Kuma watches production services only, and a
+household bill tracker on the lab network is not one — an earlier draft of this file recommended
+adding a monitor, which was the wrong call. The certificate warning above reaches the lab anyway,
+because it is attached to the wildcard rather than to any one service.
 
-A monitor on HomeBudget should point at `http://192.168.0.182:8000/health` rather than the public
-URL. Everything on `office.lab` sits behind Authelia, so `https://rachunki.office.lab/` answers 200
-whenever *Authelia* is healthy — it would stay green with the app dead behind it.
+Still worth fixing there: five monitors — including **Authelia**, whose failure takes every other
+service with it — have no notification attached, so their alerts go nowhere. One change each in the
+Kuma UI.
 
 The reissue itself is one script; see `office-proxmox-server/08-officelab-ca.md`.
 
