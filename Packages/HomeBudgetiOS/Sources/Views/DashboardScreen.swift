@@ -167,17 +167,26 @@ struct DashboardScreen: View {
     @State private var historyTarget: Expense?
     @State private var calendarTarget: Dashboard.ExpenseSummary?
     @State private var editorTarget: EditorTarget?
+    /// The row showing in the detail column. Regular width only — on a phone the
+    /// history is a sheet, and a selection outliving it would be state nothing shows.
+    @State private var selectedExpense: Expense?
     @State private var search = ""
     @State private var frequencyFilter: Frequency?
     @State private var statusFilter: ExpenseStatus?
     @State private var deleteTarget: Expense?
     @Environment(\.horizontalSizeClass) private var sizeClass
 
-    /// Two columns on a phone, four across an iPad. An adaptive grid packs the cards against the
-    /// leading edge at their minimum width instead of spreading them, which left most of an iPad's
-    /// width empty and wrapped the amounts onto two lines.
+    /// How wide the summary row actually is. Not the same question as the size class: inside a
+    /// split view the sidebar is a narrow column in a `.regular` environment, and choosing four
+    /// columns there wrapped "Monthly budget" onto four lines and truncated the amount to "P…".
+    @State private var summaryWidth: CGFloat = 0
+
+    /// As many columns as fit at a readable width, between one and four.
+    ///
+    /// An adaptive grid was tried first and packs the cards against the leading edge at their
+    /// minimum width rather than spreading them, which left most of an iPad's width empty.
     private var summaryColumns: [GridItem] {
-        let count = sizeClass == .regular ? 4 : 2
+        let count = max(1, min(4, Int(summaryWidth / 170)))
         return Array(repeating: GridItem(.flexible(), spacing: 16), count: count)
     }
 
@@ -216,132 +225,160 @@ struct DashboardScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    if let dashboard = model.dashboard {
-                        summary(dashboard.kpis)
-                        alerts(dashboard.notifications)
-                        expenses(dashboard.expenses)
-                    } else if model.isLoading {
-                        ProgressView().padding(.top, 80)
-                    }
-                }
-                .padding()
+        // An iPad running the phone layout spends most of its width on margins, and the history —
+        // the one screen worth reading beside the list rather than on top of it — was a sheet
+        // covering everything. Compact is untouched.
+        if sizeClass == .regular {
+            NavigationSplitView {
+                dashboard
+                    .navigationSplitViewColumnWidth(min: 340, ideal: 400, max: 520)
+            } detail: {
+                detail
             }
-            .navigationTitle("HomeBudget")
-            .searchable(text: $search, prompt: UIString.searchPlaceholder(language))
-            .refreshable { await model.load() }
-            .task {
-                if model.dashboard == nil { await model.load() }
-                #if DEBUG
-                    // Opens the price history straight away, so it can be looked at without
-                    // driving the simulator through the taps that normally reach it.
-                    if DevelopMode.isOn, DevelopMode.initialSheet == "history" {
-                        historyTarget = model.dashboard?.expenses
-                            .first { $0.expense.isVariable }?.expense
-                    }
-                #endif
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(UIString.actionAdd(language), systemImage: "plus") {
-                        editorTarget = EditorTarget(expense: nil)
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button(UIString.actionRefresh(language), systemImage: "arrow.clockwise") {
-                            Task { await model.load() }
-                        }
+            .navigationSplitViewStyle(.balanced)
+        } else {
+            NavigationStack { dashboard }
+        }
+    }
 
-                        Section {
+    /// The detail column: the selected bill's history, or an invitation to pick one.
+    @ViewBuilder
+    private var detail: some View {
+        if let selectedExpense {
+            PriceHistoryContent(expense: selectedExpense, session: session)
+                .navigationTitle(selectedExpense.name)
+                .navigationBarTitleDisplayMode(.inline)
+        } else {
+            ContentUnavailableView(
+                UIString.actionHistory(language), systemImage: "chart.line.uptrend.xyaxis")
+        }
+    }
+
+    private var dashboard: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                if let dashboard = model.dashboard {
+                    summary(dashboard.kpis)
+                    alerts(dashboard.notifications)
+                    expenses(dashboard.expenses)
+                } else if model.isLoading {
+                    ProgressView().padding(.top, 80)
+                }
+            }
+            .padding()
+        }
+        .navigationTitle("HomeBudget")
+        .searchable(text: $search, prompt: UIString.searchPlaceholder(language))
+        .refreshable { await model.load() }
+        .task {
+            if model.dashboard == nil { await model.load() }
+            #if DEBUG
+                // Opens the price history straight away, so it can be looked at without
+                // driving the simulator through the taps that normally reach it.
+                if DevelopMode.isOn, DevelopMode.initialSheet == "history" {
+                    historyTarget = model.dashboard?.expenses
+                        .first { $0.expense.isVariable }?.expense
+                }
+            #endif
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(UIString.actionAdd(language), systemImage: "plus") {
+                    editorTarget = EditorTarget(expense: nil)
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button(UIString.actionRefresh(language), systemImage: "arrow.clockwise") {
+                        Task { await model.load() }
+                    }
+
+                    Section {
+                        Button(
+                            reminders.hasExported
+                                ? UIString.actionUpdateReminders(language)
+                                : UIString.actionExportReminders(language),
+                            systemImage: "checklist"
+                        ) {
+                            Task {
+                                await reminders.export(
+                                    model.dashboard?.expenses ?? [],
+                                    listName: UIString.remindersListName(language))
+                            }
+                        }
+                        .disabled(model.dashboard == nil || reminders.isExporting)
+
+                        if reminders.hasExported {
                             Button(
-                                reminders.hasExported
-                                    ? UIString.actionUpdateReminders(language)
-                                    : UIString.actionExportReminders(language),
-                                systemImage: "checklist"
+                                UIString.actionRemoveReminders(language),
+                                systemImage: "checklist.unchecked", role: .destructive
                             ) {
-                                Task {
-                                    await reminders.export(
-                                        model.dashboard?.expenses ?? [],
-                                        listName: UIString.remindersListName(language))
-                                }
-                            }
-                            .disabled(model.dashboard == nil || reminders.isExporting)
-
-                            if reminders.hasExported {
-                                Button(
-                                    UIString.actionRemoveReminders(language),
-                                    systemImage: "checklist.unchecked", role: .destructive
-                                ) {
-                                    Task { await reminders.removeAll() }
-                                }
+                                Task { await reminders.removeAll() }
                             }
                         }
+                    }
 
-                        Button(UIString.actionSignOut(language), systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
-                            Task { await session.signOut() }
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis")
+                    Button(UIString.actionSignOut(language), systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
+                        Task { await session.signOut() }
                     }
+                } label: {
+                    Image(systemName: "ellipsis")
                 }
             }
-            .alert(UIString.errorTitle(language), isPresented: .constant(model.errorMessage != nil)) {
-                Button("OK") { model.errorMessage = nil }
-            } message: {
-                Text(model.errorMessage ?? "")
+        }
+        .alert(UIString.errorTitle(language), isPresented: .constant(model.errorMessage != nil)) {
+            Button("OK") { model.errorMessage = nil }
+        } message: {
+            Text(model.errorMessage ?? "")
+        }
+        .sheet(item: $historyTarget) { expense in
+            PriceHistoryScreen(expense: expense, session: session)
+        }
+        .sheet(item: $editorTarget) { target in
+            ExpenseEditor(existing: target.expense) { input in
+                Task { await model.save(input, editing: target.expense?.id) }
             }
-            .sheet(item: $historyTarget) { expense in
-                PriceHistoryScreen(expense: expense, session: session)
-            }
-            .sheet(item: $editorTarget) { target in
-                ExpenseEditor(existing: target.expense) { input in
-                    Task { await model.save(input, editing: target.expense?.id) }
+        }
+        // A real binding, not `.constant`: dismissing by tapping outside has to clear the
+        // target too, or the dialog comes straight back.
+        .confirmationDialog(
+            UIString.deleteConfirmTitle(language),
+            isPresented: Binding(
+                get: { deleteTarget != nil },
+                set: { if !$0 { deleteTarget = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button(UIString.actionDelete(language), role: .destructive) {
+                if let expense = deleteTarget {
+                    Task { await model.delete(expense) }
                 }
+                deleteTarget = nil
             }
-            // A real binding, not `.constant`: dismissing by tapping outside has to clear the
-            // target too, or the dialog comes straight back.
-            .confirmationDialog(
-                UIString.deleteConfirmTitle(language),
-                isPresented: Binding(
-                    get: { deleteTarget != nil },
-                    set: { if !$0 { deleteTarget = nil } }),
-                titleVisibility: .visible
-            ) {
-                Button(UIString.actionDelete(language), role: .destructive) {
-                    if let expense = deleteTarget {
-                        Task { await model.delete(expense) }
-                    }
-                    deleteTarget = nil
+            Button(UIString.actionCancel(language), role: .cancel) { deleteTarget = nil }
+        } message: {
+            Text(UIString.deleteConfirmMessage(language))
+        }
+        .sheet(item: $calendarTarget) { summary in
+            if let due = summary.dueDate {
+                EventEditSheet(expense: summary.expense, dueDate: due) { _ in
+                    calendarTarget = nil
                 }
-                Button(UIString.actionCancel(language), role: .cancel) { deleteTarget = nil }
-            } message: {
-                Text(UIString.deleteConfirmMessage(language))
+                .ignoresSafeArea()
             }
-            .sheet(item: $calendarTarget) { summary in
-                if let due = summary.dueDate {
-                    EventEditSheet(expense: summary.expense, dueDate: due) { _ in
-                        calendarTarget = nil
-                    }
-                    .ignoresSafeArea()
-                }
-            }
-            .alert(
-                reminderMessage ?? "",
-                isPresented: .constant(reminders.lastOutcome != nil)
-            ) {
-                Button("OK") { reminders.acknowledge() }
-            }
-            .sheet(item: $payTarget) { expense in
-                PaymentSheet(
-                    expense: expense, language: language,
-                    suggestion: model.suggestion(for: expense)
-                ) { amount in
-                    payTarget = nil
-                    Task { await model.pay(expense, amount: amount) }
-                }
+        }
+        .alert(
+            reminderMessage ?? "",
+            isPresented: .constant(reminders.lastOutcome != nil)
+        ) {
+            Button("OK") { reminders.acknowledge() }
+        }
+        .sheet(item: $payTarget) { expense in
+            PaymentSheet(
+                expense: expense, language: language,
+                suggestion: model.suggestion(for: expense)
+            ) { amount in
+                payTarget = nil
+                Task { await model.pay(expense, amount: amount) }
             }
         }
     }
@@ -366,6 +403,7 @@ struct DashboardScreen: View {
                 figure(UIString.kpiYearlyDues(language),
                        NumberFormatting.currency(kpis.yearlyTotal, language: language))
             }
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { summaryWidth = $0 }
         }
     }
 
@@ -450,7 +488,14 @@ struct DashboardScreen: View {
                 ExpenseRow(
                     summary: summary, language: language,
                     onPay: { payTarget = summary.expense },
-                    onHistory: { historyTarget = summary.expense },
+                    onHistory: {
+                        // Beside the list on an iPad, over it on a phone.
+                        if sizeClass == .regular {
+                            selectedExpense = summary.expense
+                        } else {
+                            historyTarget = summary.expense
+                        }
+                    },
                     onAddToCalendar: {
                         Task {
                             guard await CalendarAccess.request() else { return }
