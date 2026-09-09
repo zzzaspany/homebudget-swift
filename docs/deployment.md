@@ -109,3 +109,11 @@ under Apple's `container`, whose VM networking is slower.
 
 `GET /health` needs no authentication and touches no database, which makes it usable as a container
 health check without granting anything.
+
+## Machine callers
+
+`API_TOKENS` holds comma-separated `name:secret` pairs and grants **read-only** access without an
+Authelia session, for shortcuts and automations. Unset means no machine can call the API, which is
+the default. Secrets go in Infisical with the rest. See [api.md](api.md), which also sets out what
+the token does not protect against — the app publishes port 8000 on the lab network, and a request
+that reaches it directly can set its own identity headers and write.

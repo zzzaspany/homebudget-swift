@@ -13,6 +13,21 @@ updating before the container will start.
 
 ## [Unreleased]
 
+### Added
+
+- **Read-only API tokens** (`API_TOKENS`), so a shortcut, an automation or a script can read the
+  budget without an Authelia sign-in page it cannot use. A token may only `GET`; every write is
+  refused with 403, enforced in the middleware so an endpoint added later is closed by default. See
+  [docs/api.md](docs/api.md).
+
+### Security
+
+- Documented, not fixed: **the identity headers are trusted from anywhere on the lab network.** The
+  container publishes port 8000, and a request reaching it directly can set its own `Remote-User`
+  and both read and write. It predates the tokens above and is the reason their read-only guarantee
+  is a guarantee about tokens rather than about the network. Recorded in
+  [docs/roadmap.md](docs/roadmap.md).
+
 ## [1.0.0] — 2026-09-09
 
 The Swift rewrite of `homebudget-python`, at parity with it on the web and ahead of it on the phone.

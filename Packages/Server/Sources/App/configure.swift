@@ -5,6 +5,14 @@ import Vapor
 
 public func configure(_ app: Application) async throws {
     app.devMode = Environment.get("DEV_MODE")?.lowercased() == "true"
+    app.apiTokens = APIToken.parse(Environment.get("API_TOKENS") ?? "") {
+        app.logger.warning("Ignoring an API_TOKENS entry: \($0)")
+    }
+    if !app.apiTokens.isEmpty {
+        app.logger.info(
+            "Read-only API tokens accepted for: \(app.apiTokens.map(\.name).joined(separator: ", "))")
+    }
+
     app.databases.use(.postgres(configuration: try postgresConfiguration()), as: .psql)
 
     app.migrations.add(CreateFrequencyEnum())
