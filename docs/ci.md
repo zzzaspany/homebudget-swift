@@ -73,6 +73,34 @@ For comparison, if the repository were private:
 | Xcode Cloud | 25 compute hours a month included with the $99 membership; then $49.99/mo for 100 h | Handles signing itself — no certificates in secrets |
 | Self-hosted Mac mini | $700–1 200 up front, ~$20–35/mo amortised over three years | From March 2026 GitHub also meters self-hosted minutes, though public repositories stay free |
 
+## The image build, and an optimisation that did not work
+
+`image` took 11 min 08 s, broken down as:
+
+| Step | Time |
+| --- | --- |
+| `swift build -c release --static-swift-stdlib` | **495 s** |
+| the WebAssembly bundle | 167 s |
+| pushing layers | 83 s |
+| `swift package resolve` | 31 s |
+
+**A failed experiment, recorded so nobody repeats it.** The obvious fix is to copy the manifests
+first and compile the dependencies in a layer keyed on `Package.resolved` alone, so that editing a
+controller does not rebuild Vapor. It was implemented, it built correctly on the Podman host — and
+it saved nothing. A rebuild after a one-line source change still took **481 s**, with 28 layers
+correctly reused, because SwiftPM recompiled Vapor, NIO and Fluent anyway: 23 `Compiling Vapor`
+lines in the log of a build whose dependency layer was a cache hit.
+
+The release build's whole-module optimisation does not reuse dependency artefacts across a change to
+the module that depends on them, so the layer boundary buys nothing. The change was abandoned rather
+than shipped, because twenty-five lines of placeholder-source scaffolding for no measured gain is a
+cost with no benefit.
+
+What *was* done instead: the image is built on tags rather than on every merge. A merge is not a
+release, and an image nobody pulls between one release and the next is built for nobody. `latest`
+follows the newest tag, which is what the Quadlet pulls; `workflow_dispatch` covers deploying `main`
+without a version bump.
+
 ## Do we need fastlane?
 
 Probably not yet, and it is worth being clear about why rather than adding it because iOS projects
