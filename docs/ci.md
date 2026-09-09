@@ -12,7 +12,7 @@ prices and free tiers move, so check them before acting on the numbers.
 | `secrets` | ubuntu | gitleaks over the pull request's history |
 | `version` | ubuntu | `VERSION`, the iOS project and any `v*` tag agree |
 | `changes` | ubuntu | which of the slow jobs this change actually needs |
-| `test` | ubuntu, `swift:6.3.3-noble` | `HomeBudgetCore` and `Server` suites |
+| `test` | ubuntu, `swift:6.3.3-noble` + Postgres | `HomeBudgetCore` and `Server` suites, including the API against a real database |
 | `web` | ubuntu, `swift:6.3.3-noble` | the client still compiles to WebAssembly |
 | `ios` | macos-26 | the iOS app and its widget still compile |
 | `image` | ubuntu | builds and pushes the container image on `main` |
@@ -31,6 +31,21 @@ looser restore keys so a source change still starts from a warm directory rather
 documentation or only the iOS app has no way to break the WebAssembly build. Pushes to `main` and
 tags still run everything: the point is fast feedback while iterating, not thinner coverage on the
 branch that gets deployed.
+
+### The API suite needs a database, and must never find the wrong one
+
+The `test` job runs a `postgres:17-alpine` service, and the suite reads **`TEST_DATABASE_URL`** —
+never `DATABASE_URL`, with no fallback. That is not fussiness: this repository's `.env` points
+`DATABASE_URL` at the live household database, and a suite whose first act is to truncate
+`payments` and `expenses` must not be one typo away from it. With `TEST_DATABASE_URL` unset the
+suite reports as *skipped* rather than passing, because a suite that goes green without having run
+is worse than one that is absent.
+
+To run it locally, point it at a throwaway database of your own:
+
+```bash
+TEST_DATABASE_URL=postgres://homebudget:test@localhost:5432/homebudget_test make test
+```
 
 `test` deliberately still runs on every change. It is the business-logic contract, and it is the one
 job whose absence would let a real regression through.
