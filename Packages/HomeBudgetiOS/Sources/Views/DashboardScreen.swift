@@ -103,6 +103,30 @@ final class DashboardModel {
         }
     }
 
+    /// What to propose paying for a variable bill, built from the payments already loaded rather
+    /// than by asking the server again — the dashboard has them, and opening a sheet is not the
+    /// moment to wait on a request.
+    func suggestion(for expense: Expense) -> AmountSuggestion? {
+        guard expense.isVariable else { return nil }
+
+        let history = PriceHistory.build(
+            expenseID: expense.id,
+            payments: payments
+                .filter { $0.expenseID == expense.id }
+                .map {
+                    Payment(
+                        id: $0.id, expenseID: $0.expenseID, amountPaid: $0.amountPaid,
+                        datePaid: $0.datePaid, period: $0.period, paidBy: $0.paidBy)
+                })
+
+        // The month the bill is actually falling due in, which is not necessarily this one.
+        let month = dashboard?.expenses
+            .first { $0.expense.id == expense.id }?
+            .dueDate?.month ?? CalendarDate.today().month
+
+        return history.suggestedAmount(forMonth: month)
+    }
+
     func pay(_ expense: Expense, amount: Double?) async {
         #if DEBUG
             if DevelopMode.isOn { return }
@@ -296,7 +320,10 @@ struct DashboardScreen: View {
                 Button("OK") { reminders.acknowledge() }
             }
             .sheet(item: $payTarget) { expense in
-                PaymentSheet(expense: expense, language: language) { amount in
+                PaymentSheet(
+                    expense: expense, language: language,
+                    suggestion: model.suggestion(for: expense)
+                ) { amount in
                     payTarget = nil
                     Task { await model.pay(expense, amount: amount) }
                 }
