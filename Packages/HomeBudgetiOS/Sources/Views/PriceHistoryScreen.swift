@@ -6,41 +6,33 @@ import SwiftUI
 ///
 /// Most useful for the variable ones — electricity and gas move enough that the trend is the point,
 /// not the individual amounts.
-struct PriceHistoryScreen: View {
+struct PriceHistoryContent: View {
     let expense: Expense
     let session: AutheliaSession
 
     @State private var history: PriceHistory?
     @State private var errorMessage: String?
-    @Environment(\.dismiss) private var dismiss
 
     private var language: Language { .device }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if let history, !history.entries.isEmpty {
-                    content(history)
-                } else if let errorMessage {
-                    ContentUnavailableView(
-                        UIString.loadFailed(language), systemImage: "exclamationmark.triangle",
-                        description: Text(errorMessage))
-                } else if history != nil {
-                    ContentUnavailableView(
-                        UIString.emptyPayments(language), systemImage: "tray")
-                } else {
-                    ProgressView()
-                }
+        Group {
+            if let history, !history.entries.isEmpty {
+                content(history)
+            } else if let errorMessage {
+                ContentUnavailableView(
+                    UIString.loadFailed(language), systemImage: "exclamationmark.triangle",
+                    description: Text(errorMessage))
+            } else if history != nil {
+                ContentUnavailableView(
+                    UIString.emptyPayments(language), systemImage: "tray")
+            } else {
+                ProgressView()
             }
-            .navigationTitle(expense.name)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(UIString.actionCancel(language)) { dismiss() }
-                }
-            }
-            .task { await load() }
         }
+        // Keyed on the expense so switching rows in the iPad's detail column reloads, rather than
+        // leaving the previous bill's chart under the new bill's title.
+        .task(id: expense.id) { await load() }
     }
 
     private func content(_ history: PriceHistory) -> some View {
@@ -150,6 +142,31 @@ struct PriceHistoryScreen: View {
             history = try await APIClient(session: session).history(expenseID: expense.id)
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+}
+
+/// The sheet the phone presents, wrapping the same content in its own navigation container.
+///
+/// On iPad the content goes into the split view's detail column instead, which supplies the title
+/// and needs no dismiss button — hence the split.
+struct PriceHistoryScreen: View {
+    let expense: Expense
+    let session: AutheliaSession
+
+    @Environment(\.dismiss) private var dismiss
+    private var language: Language { .device }
+
+    var body: some View {
+        NavigationStack {
+            PriceHistoryContent(expense: expense, session: session)
+                .navigationTitle(expense.name)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(UIString.actionCancel(language)) { dismiss() }
+                    }
+                }
         }
     }
 }
