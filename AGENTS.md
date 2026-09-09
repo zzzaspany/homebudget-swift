@@ -18,7 +18,7 @@ Three places, and they do not overlap:
 | `docs/troubleshooting/*.md` | One file per area. Every problem that cost more than a few minutes: symptom, cause, fix, date. |
 | `HomeBudgetCore.docc` | The API reference, built by DocC from doc comments plus the catalog's articles. What a type *is*, not how the project is run. |
 | `docs/roadmap.md` | What is worth building next, and what has been ruled out and why. |
-| `docs/ci.md`, `docs/releasing-and-costs.md` | Research with a date on it. Re-check the numbers before acting on them. |
+| `docs/ci.md` | Research with a date on it. Re-check the numbers before acting on them. |
 
 **Every non-obvious problem gets an entry the same session it is solved.** A fix nobody can find
 again is worth about as much as no fix. Keep the format in
