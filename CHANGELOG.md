@@ -13,7 +13,7 @@ updating before the container will start.
 
 ## [Unreleased]
 
-## [1.0.0] — 2026-09-08
+## [1.0.0] — 2026-09-09
 
 The Swift rewrite of `homebudget-python`, at parity with it on the web and ahead of it on the phone.
 
@@ -38,6 +38,9 @@ The Swift rewrite of `homebudget-python`, at parity with it on the web and ahead
 - **Local notifications** warning a bill's own `dueSoonThresholdDays` ahead of its due date.
 - **Deployment**: multi-stage container image, rootless Podman Quadlets, and secrets fetched from
   Infisical into tmpfs at start rather than kept on disk.
+- **An iPad layout of its own.** In a regular size class the dashboard is a split view with the
+  price history in the detail column, rather than a phone layout stretched across a tablet with the
+  history covering it as a sheet.
 
 ### Changed — deliberate differences from the Python app
 
@@ -58,6 +61,12 @@ Both are bug fixes agreed before the rewrite began. Figures will not match the o
   to show.
 - A reminder's due date, which Reminders was taking from the attached alarm — putting every bill
   `dueSoonThresholdDays` early and anchoring its recurrence on the wrong day of the month.
+- Reading completed reminders back, which killed the app on every launch. EventKit calls its
+  completion on its own queue, and a closure written inside a `@MainActor` method inherits that
+  isolation, so Swift 6 inserts an executor check that traps rather than failing gracefully.
+- The KPI cards in the iPad sidebar, whose column count came from the size class — a sidebar is a
+  narrow column in a `.regular` environment, so four columns wrapped the labels and truncated the
+  amounts. The grid now measures its own width.
 
 ### Infrastructure
 

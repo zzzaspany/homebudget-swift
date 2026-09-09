@@ -120,7 +120,9 @@ release: ## Cut a release: make release NEW=1.1.0
 	@echo "$(NEW)" > VERSION
 	@sed -i '' 's/MARKETING_VERSION: ".*"/MARKETING_VERSION: "$(NEW)"/' $(IOS_DIR)/project.yml
 	@git add VERSION CHANGELOG.md $(IOS_DIR)/project.yml
-	@git commit -q -m "Release $(NEW)"
+	@# Nothing to commit when the version was already written by hand — the first release was
+	@# prepared that way. Tag the commit that is there rather than failing on an empty commit.
+	@git diff --cached --quiet || git commit -q -m "Release $(NEW)"
 	@git tag -a "v$(NEW)" -m "Release $(NEW)"
 	@echo "Tagged v$(NEW). Push it when you mean it:"
 	@echo "    git push && git push origin v$(NEW)"
