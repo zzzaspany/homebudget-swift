@@ -71,6 +71,43 @@ the fetch callback rather than letting the objects cross an isolation boundary.
 
 *Hit 2026-09-09.*
 
+## Reading the result crashes the app on launch
+
+**Symptom.** The app dies immediately, every launch, with no visible error — it looks like the
+Simulator "starting it in the background", because the home screen simply stays in front. Only the
+crash report gives it away:
+
+```
+Triggered by Thread 7, Dispatch Queue: com.apple.eventkit.reminders.search
+EXC_BREAKPOINT (SIGTRAP)
+  _dispatch_assert_queue_fail
+  _swift_task_checkIsolatedSwift
+  closure #1 in closure #1 in closure #1 in ReminderExport.completedSinceLastSync()
+  __62-[EKReminderStore fetchRemindersMatchingPredicate:completion:]_block_invoke_2
+```
+
+**Cause.** EventKit calls the completion on its own queue. A closure written inside a `@MainActor`
+method **inherits that isolation**, so Swift 6 inserts an executor check on entry — and it traps
+rather than failing gracefully.
+
+Marking the helpers the closure calls `nonisolated` is **not** enough; that took a second crash
+report to establish. The closure itself has to be non-isolated, which in practice means the function
+containing it.
+
+**Fix.** Put the fetch in a `nonisolated static` function, and pass it only `Sendable` values:
+
+```swift
+nonisolated private static func fetchCompleted(
+    inListWithIdentifier listID: String, since: Date
+) async -> [(id: String, completed: Date)]
+```
+
+`NSPredicate` and `EKCalendar` are not Sendable, so the predicate is built on the far side from the
+list's identifier. `EventKitBridge.store` is `nonisolated(unsafe)` for the same reason — a
+main-actor-isolated store cannot be touched from EventKit's queue at all.
+
+*Hit 2026-09-09.*
+
 ## Permission levels are not symmetrical
 
 Worth knowing before designing a feature around either:

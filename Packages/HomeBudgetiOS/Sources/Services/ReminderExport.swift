@@ -34,9 +34,50 @@ final class ReminderExport {
     private let lastSyncKey = "reminderLastSyncDate"
 
     /// Marks a reminder as ours and says which expense it stands for.
-    private static let urlScheme = "homebudget://expense/"
+    ///
+    /// Both are `nonisolated` because they are read inside EventKit's fetch callback, which runs on
+    /// its own queue (`com.apple.eventkit.reminders.search`). This type is `@MainActor`, so touching
+    /// an isolated member from there makes Swift 6 insert an executor check that fails — and it does
+    /// not fail gracefully: it traps, taking the app down on launch. Neither value needs isolation;
+    /// one is a constant and the other is pure string handling.
+    nonisolated private static let urlScheme = "homebudget://expense/"
 
-    private static func expenseID(from url: URL?) -> String? {
+    /// Runs the fetch from a `nonisolated` context on purpose.
+    ///
+    /// EventKit calls its completion on `com.apple.eventkit.reminders.search`. A closure written
+    /// inside a `@MainActor` method inherits that isolation, so Swift 6 inserts an executor check
+    /// on entry — and it does not fail gracefully, it traps and takes the app down. Two crash
+    /// reports were needed to establish that marking the *called* helpers `nonisolated` is not
+    /// enough: the closure itself has to be non-isolated, which means the function containing it.
+    ///
+    /// The identifier and completion date are extracted here rather than returned as `EKReminder`s,
+    /// which are not Sendable.
+    nonisolated private static func fetchCompleted(
+        inListWithIdentifier listID: String, since: Date
+    ) async -> [(id: String, completed: Date)] {
+        guard let list = EventKitBridge.store.calendar(withIdentifier: listID) else { return [] }
+
+        // Asking the store what was completed, rather than inspecting the items we created:
+        // completing a recurring reminder advances the series and leaves the finished occurrence
+        // as a separate item, so the identifiers we hold point at reminders that are still open.
+        let predicate = EventKitBridge.store.predicateForCompletedReminders(
+            withCompletionDateStarting: since == .distantPast ? nil : since,
+            ending: nil, calendars: [list])
+
+        return await withCheckedContinuation { continuation in
+            EventKitBridge.store.fetchReminders(matching: predicate) { reminders in
+                let rows = (reminders ?? []).compactMap { reminder -> (String, Date)? in
+                    guard let completed = reminder.completionDate,
+                        let id = expenseID(from: reminder.url)
+                    else { return nil }
+                    return (id, completed)
+                }
+                continuation.resume(returning: rows)
+            }
+        }
+    }
+
+    nonisolated private static func expenseID(from url: URL?) -> String? {
         guard let text = url?.absoluteString, text.hasPrefix(urlScheme) else { return nil }
         let id = String(text.dropFirst(urlScheme.count))
         return id.isEmpty ? nil : id
@@ -127,31 +168,11 @@ final class ReminderExport {
         }
 
         let since = UserDefaults.standard.object(forKey: lastSyncKey) as? Date ?? .distantPast
-        guard
-            let listID = UserDefaults.standard.string(forKey: listKey),
-            let list = EventKitBridge.store.calendar(withIdentifier: listID)
-        else { return [] }
+        guard let listID = UserDefaults.standard.string(forKey: listKey) else { return [] }
 
-        // Asking the store for what was completed, rather than inspecting the items we created.
-        // Completing a recurring reminder advances the series and leaves the finished occurrence
-        // as a separate item, so the identifiers we hold point at reminders that are still open.
-        let predicate = EventKitBridge.store.predicateForCompletedReminders(
-            withCompletionDateStarting: since == .distantPast ? nil : since,
-            ending: nil, calendars: [list])
-
-        // The identifier and the completion date are pulled out inside the callback: `EKReminder`
-        // is not Sendable, so the objects themselves must not cross the isolation boundary.
-        let finished: [(id: String, completed: Date)] = await withCheckedContinuation { continuation in
-            EventKitBridge.store.fetchReminders(matching: predicate) { reminders in
-                let rows = (reminders ?? []).compactMap { reminder -> (String, Date)? in
-                    guard let completed = reminder.completionDate,
-                        let id = Self.expenseID(from: reminder.url)
-                    else { return nil }
-                    return (id, completed)
-                }
-                continuation.resume(returning: rows)
-            }
-        }
+        // Only the list's identifier and the date cross over — both Sendable. The predicate is
+        // built on the other side because `NSPredicate` and `EKCalendar` are not.
+        let finished = await Self.fetchCompleted(inListWithIdentifier: listID, since: since)
 
         var newest = since
         var seen: Set<String> = []

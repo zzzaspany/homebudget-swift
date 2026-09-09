@@ -9,7 +9,11 @@ import HomeBudgetCore
 /// and identifiers handed out by one store are not meaningful to another.
 @MainActor
 enum EventKitBridge {
-    static let store = EKEventStore()
+    /// `nonisolated(unsafe)` because EventKit's fetch callbacks run on its own queue, and a
+    /// main-actor-isolated store cannot be touched from there without Swift 6 inserting an executor
+    /// check that traps. The store is used for reads from that queue and for writes from the main
+    /// actor only; EventKit serialises its own access.
+    nonisolated(unsafe) static let store = EKEventStore()
 
     /// The hour a bill is due at. Nothing in the domain has a time of day, so one is chosen —
     /// morning, when there is still a working day left to pay it in.
