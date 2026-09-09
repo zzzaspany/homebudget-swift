@@ -127,14 +127,29 @@ final class DashboardModel {
         return history.suggestedAmount(forMonth: month)
     }
 
-    func pay(_ expense: Expense, amount: Double?) async {
+    /// Records a payment for each of the given expenses at its nominal amount.
+    ///
+    /// One reload at the end rather than one per payment: the dashboard is derived from all of
+    /// them, and refreshing between each would show figures that were briefly half-updated.
+    func recordPayments(forExpenses ids: [String]) async {
+        guard let summaries = dashboard?.expenses else { return }
+        for id in ids {
+            guard let expense = summaries.first(where: { $0.expense.id == id })?.expense else {
+                continue
+            }
+            await pay(expense, amount: nil, reloading: false)
+        }
+        await load()
+    }
+
+    func pay(_ expense: Expense, amount: Double?, reloading: Bool = true) async {
         #if DEBUG
             if DevelopMode.isOn { return }
         #endif
 
         do {
             try await client.pay(expenseID: expense.id, amount: amount)
-            await load()
+            if reloading { await load() }
         } catch APIError.signedOut {
             await session.signOut()
         } catch {

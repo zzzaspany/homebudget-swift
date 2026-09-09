@@ -33,6 +33,15 @@ final class ReminderExport {
     private let listKey = "reminderListIdentifier"
     private let lastSyncKey = "reminderLastSyncDate"
 
+    /// Marks a reminder as ours and says which expense it stands for.
+    private static let urlScheme = "homebudget://expense/"
+
+    private static func expenseID(from url: URL?) -> String? {
+        guard let text = url?.absoluteString, text.hasPrefix(urlScheme) else { return nil }
+        let id = String(text.dropFirst(urlScheme.count))
+        return id.isEmpty ? nil : id
+    }
+
     private var identifiers: [String: String] {
         get { UserDefaults.standard.dictionary(forKey: identifiersKey) as? [String: String] ?? [:] }
         set { UserDefaults.standard.set(newValue, forKey: identifiersKey) }
@@ -118,22 +127,40 @@ final class ReminderExport {
         }
 
         let since = UserDefaults.standard.object(forKey: lastSyncKey) as? Date ?? .distantPast
-        let known = identifiers
-        var paid: [String] = []
-        var newest = since
+        guard
+            let listID = UserDefaults.standard.string(forKey: listKey),
+            let list = EventKitBridge.store.calendar(withIdentifier: listID)
+        else { return [] }
 
-        for (expenseID, identifier) in known {
-            guard
-                let reminder = EventKitBridge.store.calendarItem(withIdentifier: identifier)
-                    as? EKReminder,
-                let completed = reminder.completionDate
-            else { continue }
+        // Asking the store for what was completed, rather than inspecting the items we created.
+        // Completing a recurring reminder advances the series and leaves the finished occurrence
+        // as a separate item, so the identifiers we hold point at reminders that are still open.
+        let predicate = EventKitBridge.store.predicateForCompletedReminders(
+            withCompletionDateStarting: since == .distantPast ? nil : since,
+            ending: nil, calendars: [list])
 
-            if completed > since {
-                paid.append(expenseID)
-                newest = max(newest, completed)
+        // The identifier and the completion date are pulled out inside the callback: `EKReminder`
+        // is not Sendable, so the objects themselves must not cross the isolation boundary.
+        let finished: [(id: String, completed: Date)] = await withCheckedContinuation { continuation in
+            EventKitBridge.store.fetchReminders(matching: predicate) { reminders in
+                let rows = (reminders ?? []).compactMap { reminder -> (String, Date)? in
+                    guard let completed = reminder.completionDate,
+                        let id = Self.expenseID(from: reminder.url)
+                    else { return nil }
+                    return (id, completed)
+                }
+                continuation.resume(returning: rows)
             }
         }
+
+        var newest = since
+        var seen: Set<String> = []
+        for row in finished where row.completed > since {
+            seen.insert(row.id)
+            newest = max(newest, row.completed)
+        }
+        // A bill completed twice in one period is still one payment.
+        let paid = Array(seen)
 
         // Only moved when something was found, so a sync that finds nothing cannot swallow a
         // completion that lands a moment later.
@@ -168,6 +195,12 @@ final class ReminderExport {
         reminder.calendar = calendar
         reminder.title = "\(expense.name) — \(NumberFormatting.currency(expense.amount, language: language))"
         reminder.notes = Localization.category(expense.category, language: language)
+        // Which expense this is, in a field the user never sees and completion does not discard.
+        // Completing a recurring reminder leaves the finished occurrence behind as a *separate*
+        // item with its own identifier, so the map from expense to identifier cannot find it —
+        // see `completedSinceLastSync`. Matching on the title would break the moment an amount
+        // changed, since the title contains it.
+        reminder.url = URL(string: "\(Self.urlScheme)\(expense.id)")
         reminder.dueDateComponents = EventKitBridge.dueComponents(due)
         reminder.recurrenceRules = [EventKitBridge.recurrenceRule(for: expense)]
 

@@ -160,11 +160,9 @@ struct MoreScreen: View {
             notice = UIString.remindersSyncNone(language)
             return
         }
-        for expenseID in paid {
-            guard let summary = model.dashboard?.expenses.first(where: { $0.expense.id == expenseID })
-            else { continue }
-            await model.pay(summary.expense, amount: nil)
-        }
+        // The same path the foreground prompt takes, so there is one implementation of "a ticked
+        // reminder becomes a payment" rather than two that can drift.
+        await model.recordPayments(forExpenses: paid)
         notice = "\(UIString.remindersSyncDone(language)) \(paid.count)"
     }
 }

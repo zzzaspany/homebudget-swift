@@ -98,6 +98,10 @@ public enum UIString: String, CaseIterable, Sendable {
     case suggestionSameMonth
     case suggestionSameMonthAverage
     case suggestionOverallAverage
+    case remindersFoundTitle
+    case remindersFoundBody
+    case remindersRecord
+    case remindersLater
 
     case emptyExpenses
     case emptyAlerts
@@ -222,6 +226,10 @@ public enum UIString: String, CaseIterable, Sendable {
         .suggestionSameMonth: "tyle samo co w tym miesiącu rok temu",
         .suggestionSameMonthAverage: "średnia z tego miesiąca w poprzednich latach",
         .suggestionOverallAverage: "średnia ze wszystkich wpłat",
+        .remindersFoundTitle: "Odhaczone przypomnienia",
+        .remindersFoundBody: "Zapisać je jako wpłaty?",
+        .remindersRecord: "Zapisz",
+        .remindersLater: "Nie teraz",
 
         .emptyExpenses: "Brak wydatków do wyświetlenia.",
         .emptyAlerts: "Nic nie wymaga uwagi.",
@@ -336,6 +344,10 @@ public enum UIString: String, CaseIterable, Sendable {
         .suggestionSameMonth: "what this month cost a year ago",
         .suggestionSameMonthAverage: "average for this month in earlier years",
         .suggestionOverallAverage: "average of every payment",
+        .remindersFoundTitle: "Ticked-off reminders",
+        .remindersFoundBody: "Record them as payments?",
+        .remindersRecord: "Record",
+        .remindersLater: "Not now",
 
         .emptyExpenses: "No expenses to show.",
         .emptyAlerts: "Nothing needs attention.",

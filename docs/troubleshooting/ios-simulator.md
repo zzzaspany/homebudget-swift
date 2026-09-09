@@ -63,9 +63,19 @@ xcrun simctl launch booted lab.office.homebudget -DEVELOP_MODE ON
 SIMCTL_CHILD_DEVELOP_MODE=ON xcrun simctl launch booted lab.office.homebudget
 ```
 
-`-DEVELOP_MODE ON` persists in the app's defaults, so a later plain launch stays in develop mode
-until you pass `-DEVELOP_MODE OFF`. That bit us: an app relaunched to test the real login flow was
-still showing fixtures.
+**It does not persist.** An earlier version of this page claimed it did — that a later plain launch
+would stay in develop mode until you passed `-DEVELOP_MODE OFF`. That is wrong. `-key value`
+arguments populate `NSArgumentDomain`, which lives only for that process, so **every** launch that
+should be in develop mode needs the flag. Launching from the home-screen icon never has it.
+
+Two related simulator quirks, both of which cost time:
+
+- `xcrun simctl launch` on an app that is not running sometimes starts it *in the background*, leaving
+  the home screen in front. The process is running and the flag took effect; you just cannot see it.
+  Tapping the icon foregrounds it — but as a fresh launch, without the argument.
+- `xcrun simctl privacy <device> reset reminders <bundle>` genuinely resets the grant, so the
+  permission prompt comes back on the next request. Useful for testing the denied path, surprising
+  when you forgot you ran it.
 
 `DEVELOP_TAB=charts|calendar` and `DEVELOP_SHEET=history` open a screen directly, which saves
 tapping through to it. All of it is `#if DEBUG` — a release build cannot be talked into skipping

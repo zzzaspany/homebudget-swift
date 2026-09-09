@@ -140,7 +140,19 @@ struct MainTabs: View {
         _selection = State(initialValue: start)
     }
 
+    @Environment(\.scenePhase) private var scenePhase
+    /// Expense identifiers whose reminder was ticked off while the app was away.
+    @State private var completed: [String] = []
+
     private var language: Language { .device }
+
+    /// Ticking a reminder off is an explicit statement that the bill is paid, so noticing it
+    /// without being asked is the point. Acting on it silently is not: this writes to the payment
+    /// history, and a stray tap on a phone in a pocket should not create a payment.
+    private func checkReminders() async {
+        guard reminders.hasExported else { return }
+        completed = await reminders.completedSinceLastSync()
+    }
 
     var body: some View {
         TabView(selection: $selection) {
@@ -157,6 +169,30 @@ struct MainTabs: View {
                 MoreScreen(session: session, model: model, reminders: reminders)
             }
         }
-        .task { if model.dashboard == nil { await model.load() } }
+        .task {
+            if model.dashboard == nil { await model.load() }
+            await checkReminders()
+        }
+        // Both, deliberately. A cold launch is already `.active` by the time this view exists, so
+        // `onChange` never fires for it — the first version checked only here and silently did
+        // nothing on every launch, which is exactly the case that matters after ticking something
+        // off and reopening the app.
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { await checkReminders() }
+        }
+        .alert(
+            UIString.remindersFoundTitle(language),
+            isPresented: Binding(get: { !completed.isEmpty }, set: { if !$0 { completed = [] } })
+        ) {
+            Button(UIString.remindersRecord(language)) {
+                let ids = completed
+                completed = []
+                Task { await model.recordPayments(forExpenses: ids) }
+            }
+            Button(UIString.remindersLater(language), role: .cancel) { completed = [] }
+        } message: {
+            Text("\(completed.count) — \(UIString.remindersFoundBody(language))")
+        }
     }
 }

@@ -40,6 +40,37 @@ actual schedule.
 **Fix.** `EventKitBridge.dueComponents` sets an hour (09:00). Nothing in the domain has a time of
 day, so one is chosen — morning, when there is still a working day left to pay the bill in.
 
+## Completing a recurring reminder does not complete the reminder you created
+
+**Symptom.** The read-back found nothing. Tick a bill off in Reminders, return to the app, and no
+completion is detected — while the log shows the app did query ReminderKit and got an answer.
+
+**Cause.** Completing a *recurring* reminder advances the series: the item at the identifier you
+stored is still open, with its due date moved to the next occurrence. The occurrence you ticked off
+is preserved as a **separate item**, with its own identifier, which appears under Completed. So
+looking up your stored identifiers and checking `completionDate` can never succeed — those items are
+by definition the ones still outstanding.
+
+Observed directly: after ticking off "Prąd" on 9 September, the series showed `10/10/2026` in the
+HomeBudget list while a separate entry sat under Completed reading `Completed: Today, 07:07`.
+
+**Fix.** Ask the store what was completed, rather than inspecting what you created:
+
+```swift
+let predicate = store.predicateForCompletedReminders(
+    withCompletionDateStarting: since, ending: nil, calendars: [list])
+```
+
+That returns items you did not create and cannot match by identifier, so each reminder carries its
+expense in `EKCalendarItem.url` (`homebudget://expense/<id>`) — a field the user never sees and
+completion does not discard. Matching on the title would break the moment an amount changed, because
+the title contains it.
+
+`EKReminder` is not `Sendable`, so the identifier and completion date have to be extracted inside
+the fetch callback rather than letting the objects cross an isolation boundary.
+
+*Hit 2026-09-09.*
+
 ## Permission levels are not symmetrical
 
 Worth knowing before designing a feature around either:
