@@ -26,15 +26,44 @@ extension Request {
     var devMode: Bool { application.devMode }
 }
 
-/// Trusts identity headers set by the reverse proxy (Authelia).
+/// Establishes who is calling, from one of two sources.
 ///
-/// The app must never be exposed directly: anything that can reach it can set these headers.
+/// A **person** arrives through Authelia, which sets identity headers on the way past. A **machine**
+/// arrives with an API token and gets read-only access — no sign-in page is usable from a shortcut
+/// or a cron job, and nothing that reads a household budget needs to write to it.
+///
+/// The header path trusts whatever the caller sends, so the app must never be reachable except
+/// through the proxy. That is a deployment property this code cannot enforce, and it is currently
+/// not true — see `docs/deployment.md`.
 struct AuthHeaderMiddleware: AsyncMiddleware {
     static let usernameHeaders = ["Remote-User", "X-Forwarded-User", "X-Auth-User"]
     static let nameHeaders = ["Remote-Name", "X-Forwarded-Name", "X-Auth-Name"]
     static let emailHeaders = ["Remote-Email", "X-Forwarded-Email", "X-Auth-Email"]
 
+    /// The methods a token may use. Enforced here rather than by registering a second, read-only
+    /// route table, so a write endpoint added later is closed to tokens the moment it exists rather
+    /// than whenever somebody remembers to close it.
+    static let readOnlyMethods: [HTTPMethod] = [.GET, .HEAD]
+
     func respond(to request: Request, chainingTo next: any AsyncResponder) async throws -> Response {
+        if let presented = APIToken.presented(in: request) {
+            // A token that is offered and wrong is refused outright. Falling through to the header
+            // path would make presenting a bad token a way to *lower* the bar, not raise it.
+            guard let token = APIToken.match(secret: presented, in: request.application.apiTokens)
+            else {
+                throw Abort(.unauthorized, reason: "Unknown API token")
+            }
+            guard Self.readOnlyMethods.contains(request.method) else {
+                throw Abort(.forbidden, reason: "API tokens are read-only")
+            }
+
+            request.auth.login(
+                UserProfile(
+                    username: token.name, name: token.name,
+                    email: "\(token.name)@api.localhost"))
+            return try await next.respond(to: request)
+        }
+
         request.auth.login(try profile(for: request))
         return try await next.respond(to: request)
     }

@@ -5,6 +5,14 @@ Ordered by what would actually hurt if left alone, not by what is fun.
 
 ## Known gaps, smallest first
 
+**The identity headers are trusted from anywhere on the lab network.** The app publishes port 8000
+on `192.168.0.0/24`, and it cannot tell a `Remote-User` header set by Authelia from one set by
+anybody else — so `curl -H 'Remote-User: konrad' http://192.168.0.182:8000/api/expenses` is full
+read and write access with no credential. Verified on 2026-09-09, not theoretical. The fix is either
+a shared secret the proxy adds and the app requires, or not publishing the port on the LAN at all;
+the first survives the container NAT, which a source-address check may not. This is the largest hole
+in the deployment and it is worth closing before anything else here. See [api.md](api.md).
+
 **Invoice attachment on iOS.** The one feature the web client has and the app does not. The server
 side is done and in use; this is client work only. Tracked as
 [#3](https://github.com/zzzaspany/homebudget-swift/issues/3).
