@@ -135,7 +135,48 @@ not read it either.
 | `NTFY_LANG` | `pl` or `en` | `pl` |
 
 Leaving `NTFY_URL` or `NTFY_TOPIC` empty disables the feature rather than failing the boot, the
-same rule `API_TOKENS` follows. The password belongs in Infisical with the rest.
+same rule `API_TOKENS` follows.
+
+### What to set in this lab
+
+ntfy already runs on the same Podman host as this app, so the push never leaves the machine.
+These go into Infisical (project **Podman Services**, environment **`homebudget-prd`**) like every
+other secret — `provision-secrets.sh` writes them into the runtime env file at boot, and nothing
+lands on disk.
+
+```
+NTFY_URL=http://host.containers.internal:8095/
+NTFY_TOPIC=lab-alerts
+NTFY_USER=labalerts
+NTFY_PASSWORD=<the ntfy publisher password, already in the ntfy-prd environment>
+```
+
+`host.containers.internal` rather than an address: from inside a rootless container `127.0.0.1` is
+the container itself, and the host's own LAN address (`192.168.0.182:8095`) is **not** reachable —
+verified, it times out. `host.containers.internal` resolves and answers.
+
+Going straight to the container also keeps Cloudflare out of the path, which matters: the tunnel in
+front of `apns.whoami.com.pl` blocks unrecognised User-Agents, which is what broke the lab agent's
+notifications once already. Publishing locally still reaches the phone, because the ntfy server
+forwards upstream to ntfy.sh itself.
+
+**Topic.** `lab-alerts` is the phone's existing subscription, so this works with nothing to set up,
+at the cost of mixing bills in with infrastructure alerts. To separate them, grant the publisher a
+topic of its own and subscribe to it on the phone:
+
+```bash
+podman exec ntfy ntfy access labalerts homebudget rw
+```
+
+then set `NTFY_TOPIC=homebudget`. The `labalerts` user currently has read-write on `lab-alerts`
+and nothing else, so changing the topic without that grant would make every push fail with 403.
+
+After changing anything in Infisical, the secrets unit has to re-run — the env file is built once
+at boot:
+
+```bash
+systemctl --user restart homebudget-swift-secrets.service homebudget-swift.service
+```
 
 The window is deliberately one flat number rather than the per-frequency `dueSoonThresholdDays`
 the dashboard colours by. The dashboard answers "is this bill in trouble"; the push answers "what
