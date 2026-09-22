@@ -1,0 +1,101 @@
+name: CodeQL
+
+# Replaces GitHub's default code-scanning setup, which had no way to say "not this language, not
+# on this change". Swift analysis costs about 37 minutes — CodeQL has to watch a real compilation
+# to extract its database, so it builds the whole Vapor tree from cold and cannot reuse the
+# `.build` cache the other jobs restore in seconds. Default setup ran that on every pull request
+# *and* every push to main: on 2026-09-22 it burned 414 minutes across 11 runs, almost all of them
+# Dependabot merges that touched no Swift at all.
+#
+# So: the cheap languages still run on everything, and Swift runs when Swift changed, once a week
+# regardless, or on request.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Monday, early. Deliberately clear of the lab's other jobs — the LXC updater (Sun 00:00),
+    # the PBS verify (Sun 03:00) and the nightly image scans (02:00).
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Detect what changed
+    runs-on: ubuntu-latest
+    outputs:
+      swift: ${{ steps.filter.outputs.swift }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            swift:
+              - 'Packages/**'
+              - '.github/workflows/codeql.yml'
+
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        # Interpreted languages and workflow files: no build to observe, so each of these finishes
+        # in under a minute. `actions` earns its place on every run — workflow files are the part
+        # of this repo that changes most often and the part that holds a token.
+        language: [actions, javascript-typescript, python]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  analyze-swift:
+    name: Analyze (swift)
+    needs: changes
+    # On a pull request or a push, only when Swift actually changed. The weekly run and a manual
+    # dispatch ignore the filter, so a release never ships without the language having been
+    # analysed at some point.
+    if: |
+      needs.changes.outputs.swift == 'true' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch'
+    # CodeQL refuses to analyse Swift anywhere else: "Swift analysis is only supported on macOS
+    # runner images." Default setup was quietly using one, which is part of why it took so long.
+    # Free here because the repository is public; on a private repo macOS minutes bill at 10x,
+    # which would be another reason not to run this on every pull request.
+    runs-on: macos-latest
+    # Cold build of the full Vapor dependency tree, plus extraction and query evaluation. Observed
+    # between 26 and 43 minutes; the default 360 would hide a hang for six hours.
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: swift
+          build-mode: autobuild
+
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:swift"
