@@ -1,9 +1,15 @@
 # syntax=docker/dockerfile:1
 
+# NOTE: the Swift version here is coupled to WASM_SDK_URL below, and to `container: swift:...`
+# in .github/workflows/build.yml and WASM_SDK in the Makefile. A compiler can only import modules
+# built by its own version — bumping this alone fails with "module compiled with Swift X cannot be
+# imported by the Swift Y compiler". Move all four together. Dependabot is told to leave this
+# image alone for exactly that reason; see .github/dependabot.yml.
+#
 # The client is compiled to WebAssembly in its own stage. It needs the Swift SDK for
 # wasm32-unknown-wasi, which is a large download, so keeping it here means the runtime image never
 # carries it and the layer is reused whenever only server code changes.
-FROM docker.io/library/swift:6.4.0-noble AS wasm
+FROM docker.io/library/swift:6.3.3-noble AS wasm
 
 ARG WASM_SDK_URL=https://download.swift.org/swift-6.3.3-release/wasm-sdk/swift-6.3.3-RELEASE/swift-6.3.3-RELEASE_wasm.artifactbundle.tar.gz
 ARG WASM_SDK_CHECKSUM=cabfa08b73bb8ac783927ecd15fa386e99d0c139c5f232445067bcf58379cae7
@@ -29,7 +35,7 @@ RUN swift package --swift-sdk swift-6.3.3-RELEASE_wasm \
 
 
 # The Vapor binary.
-FROM docker.io/library/swift:6.4.0-noble AS server
+FROM docker.io/library/swift:6.3.3-noble AS server
 
 WORKDIR /build
 COPY Packages/HomeBudgetCore Packages/HomeBudgetCore

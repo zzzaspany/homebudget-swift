@@ -27,6 +27,12 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    ignore:
+      # The Swift image version is coupled to the WebAssembly SDK, the CI test container and the
+      # Makefile. Bumping it on its own breaks the image build with "module compiled with Swift X
+      # cannot be imported by the Swift Y compiler" - which is exactly what 6.3.3 -> 6.4.0 did.
+      # Upgrade Swift deliberately, in lockstep, not by merging a dependency PR.
+      - dependency-name: "library/swift"
     groups:
       docker-minor-patch:
         update-types:
