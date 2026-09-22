@@ -10,7 +10,9 @@ struct NotificationsController: RouteCollection {
     }
 
     func boot(routes: any RoutesBuilder) throws {
-        routes.grouped("api", "notifications").post("send-email", use: sendEmail)
+        let notifications = routes.grouped("api", "notifications")
+        notifications.post("send-email", use: sendEmail)
+        notifications.post("send-push", use: sendPush)
     }
 
     func sendEmail(request: Request) async throws -> Result {
@@ -51,6 +53,48 @@ struct NotificationsController: RouteCollection {
                 ? "Wysłano powiadomienie z \(Localization.alertCountLabel(notifications.count, language: .pl))."
                 : "Sent a notification with \(notifications.count) alert\(notifications.count == 1 ? "" : "s").",
             alertCount: notifications.count
+        )
+    }
+
+    /// Publishes the same digest the daily schedule sends. Exists so the wiring can be proved
+    /// without waiting for tomorrow morning.
+    func sendPush(request: Request) async throws -> Result {
+        let language = Language(code: request.query[String.self, at: "lang"])
+
+        guard let configuration = NtfyConfiguration.fromEnvironment() else {
+            throw Abort(.serviceUnavailable, reason: "ntfy nie jest skonfigurowany: NTFY_URL, NTFY_TOPIC")
+        }
+
+        let count: Int
+        do {
+            count = try await DuePaymentDigest.send(
+                configuration: configuration,
+                database: request.db,
+                client: request.client,
+                logger: request.logger,
+                language: language
+            )
+        } catch {
+            request.logger.error("Payment digest failed: \(error)")
+            throw Abort(.badGateway, reason: String(describing: error))
+        }
+
+        guard count > 0 else {
+            return Result(
+                success: true,
+                message: language == .pl
+                    ? "Nic nie wymaga uwagi — powiadomienie nie zostało wysłane."
+                    : "Nothing needs attention — no push sent.",
+                alertCount: 0
+            )
+        }
+
+        return Result(
+            success: true,
+            message: language == .pl
+                ? "Wysłano powiadomienie z \(Localization.alertCountLabel(count, language: .pl))."
+                : "Sent a push with \(count) payment\(count == 1 ? "" : "s") due.",
+            alertCount: count
         )
     }
 }

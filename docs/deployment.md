@@ -117,3 +117,84 @@ Authelia session, for shortcuts and automations. Unset means no machine can call
 the default. Secrets go in Infisical with the rest. See [api.md](api.md), which also sets out what
 the token does not protect against — the app publishes port 8000 on the lab network, and a request
 that reaches it directly can set its own identity headers and write.
+
+## Daily payment push (ntfy)
+
+Every morning the server publishes a single notification listing the bills that are unpaid and due
+within five days, overdue ones included. If nothing is due it sends nothing — a notification that
+arrives every day saying all is well is one you stop reading, and the morning it matters you will
+not read it either.
+
+| Variable | Meaning | Default |
+| --- | --- | --- |
+| `NTFY_URL` | Full URL of the ntfy server to publish to | — (unset turns the push off) |
+| `NTFY_TOPIC` | Topic to publish on | — (unset turns the push off) |
+| `NTFY_USER` / `NTFY_PASSWORD` | Basic auth for a publish-capable ntfy user | none |
+| `NTFY_DUE_WINDOW_DAYS` | How many days ahead counts as due | `5` |
+| `NTFY_DIGEST_HOUR` / `NTFY_DIGEST_MINUTE` | Local time to publish at | `08:00` |
+| `NTFY_LANG` | `pl` or `en` | `pl` |
+
+Leaving `NTFY_URL` or `NTFY_TOPIC` empty disables the feature rather than failing the boot, the
+same rule `API_TOKENS` follows.
+
+### What to set in this lab
+
+ntfy already runs on the same Podman host as this app, so the push never leaves the machine.
+These go into Infisical (project **Podman Services**, environment **`homebudget-prd`**) like every
+other secret — `provision-secrets.sh` writes them into the runtime env file at boot, and nothing
+lands on disk.
+
+```
+NTFY_URL=http://host.containers.internal:8095/
+NTFY_TOPIC=lab-alerts
+NTFY_USER=labalerts
+NTFY_PASSWORD=<the ntfy publisher password, already in the ntfy-prd environment>
+```
+
+`host.containers.internal` rather than an address: from inside a rootless container `127.0.0.1` is
+the container itself, and the host's own LAN address (`192.168.0.182:8095`) is **not** reachable —
+verified, it times out. `host.containers.internal` resolves and answers.
+
+Going straight to the container also keeps Cloudflare out of the path, which matters: the tunnel in
+front of `apns.whoami.com.pl` blocks unrecognised User-Agents, which is what broke the lab agent's
+notifications once already. Publishing locally still reaches the phone, because the ntfy server
+forwards upstream to ntfy.sh itself.
+
+**Topic.** `lab-alerts` is the phone's existing subscription, so this works with nothing to set up,
+at the cost of mixing bills in with infrastructure alerts. To separate them, grant the publisher a
+topic of its own and subscribe to it on the phone:
+
+```bash
+podman exec ntfy ntfy access labalerts homebudget rw
+```
+
+then set `NTFY_TOPIC=homebudget`. The `labalerts` user currently has read-write on `lab-alerts`
+and nothing else, so changing the topic without that grant would make every push fail with 403.
+
+After changing anything in Infisical, the secrets unit has to re-run — the env file is built once
+at boot:
+
+```bash
+systemctl --user restart homebudget-swift-secrets.service homebudget-swift.service
+```
+
+The window is deliberately one flat number rather than the per-frequency `dueSoonThresholdDays`
+the dashboard colours by. The dashboard answers "is this bill in trouble"; the push answers "what
+do I owe this week", and one answer per bill is enough.
+
+Overdue bills raise the ntfy priority to 5 and add a siren tag, so the phone treats a missed
+payment differently from one due on Friday.
+
+To prove the wiring without waiting for tomorrow morning:
+
+```bash
+curl -X POST 'http://localhost:8000/api/notifications/send-push?lang=pl'
+```
+
+That runs exactly what the schedule runs. It reports `alert_count: 0` and sends nothing when
+nothing is due, which is a pass, not a failure. Note this is a `POST`, so an `API_TOKENS` token
+cannot call it — those are read-only by design.
+
+Scheduling is in-process: each run schedules only the next one, so a restart part-way through the
+day does not replay a push that already went out. There is no cron entry and no systemd timer to
+keep in step.
