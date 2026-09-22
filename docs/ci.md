@@ -15,7 +15,7 @@ prices and free tiers move, so check them before acting on the numbers.
 | `test` | ubuntu, `swift:6.3.3-noble` + Postgres | `HomeBudgetCore` and `Server` suites, including the API against a real database |
 | `web` | ubuntu, `swift:6.3.3-noble` | the client still compiles to WebAssembly |
 | `ios` | macos-26 | the iOS app and its widget still compile |
-| `image` | ubuntu | builds and pushes the container image on `main` |
+| `image` | ubuntu | builds and pushes the container image on a `v*` tag, or on manual dispatch |
 
 ## Why it was slow, and what was done
 
