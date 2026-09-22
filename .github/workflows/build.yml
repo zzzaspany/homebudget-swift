@@ -96,7 +96,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: |
             Packages/HomeBudgetCore/.build
@@ -124,7 +124,7 @@ jobs:
 
       # The compile is the whole cost of this job — six minutes of it, against four seconds to
       # fetch the SDK. Caching the build directory is what makes the check cheap enough to keep.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: Packages/WebClient/.build
           key: wasm-${{ hashFiles('Packages/WebClient/Package.resolved') }}-${{ hashFiles('Packages/*/Sources/**/*.swift') }}
