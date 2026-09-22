@@ -76,7 +76,11 @@ jobs:
       needs.changes.outputs.swift == 'true' ||
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    # CodeQL refuses to analyse Swift anywhere else: "Swift analysis is only supported on macOS
+    # runner images." Default setup was quietly using one, which is part of why it took so long.
+    # Free here because the repository is public; on a private repo macOS minutes bill at 10x,
+    # which would be another reason not to run this on every pull request.
+    runs-on: macos-latest
     # Cold build of the full Vapor dependency tree, plus extraction and query evaluation. Observed
     # between 26 and 43 minutes; the default 360 would hide a hang for six hours.
     timeout-minutes: 90
