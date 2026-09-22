@@ -6,6 +6,8 @@ on:
     tags: ["v*"]
   pull_request:
     branches: [main]
+  # Lets an image be built from main without cutting a release.
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -178,12 +180,14 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             build
 
+  # Only on a tag. This job costs about eleven minutes, eight of them compiling Vapor, and a merge
+  # is not a release - an image nobody pulls between one release and the next is built for nobody.
+  # workflow_dispatch covers deploying main without cutting a version.
   image:
     needs: [version, test, web, ios]
-    # A skipped dependency is not a failed one. Pushes run every job anyway, so in practice this
-    # only matters if the filter is ever loosened.
+    # A skipped dependency is not a failed one.
     if: |
-      github.event_name == 'push' &&
+      (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch') &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
