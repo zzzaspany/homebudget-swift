@@ -26,6 +26,11 @@ public func configure(_ app: Application) async throws {
         app.http.server.configuration.port = port
     }
 
+    // Unset NTFY_URL/NTFY_TOPIC simply means no daily push, rather than a boot failure.
+    if let ntfy = NtfyConfiguration.fromEnvironment() {
+        DueDigestScheduler.start(app, configuration: ntfy)
+    }
+
     try routes(app)
 }
 

@@ -117,3 +117,43 @@ Authelia session, for shortcuts and automations. Unset means no machine can call
 the default. Secrets go in Infisical with the rest. See [api.md](api.md), which also sets out what
 the token does not protect against — the app publishes port 8000 on the lab network, and a request
 that reaches it directly can set its own identity headers and write.
+
+## Daily payment push (ntfy)
+
+Every morning the server publishes a single notification listing the bills that are unpaid and due
+within five days, overdue ones included. If nothing is due it sends nothing — a notification that
+arrives every day saying all is well is one you stop reading, and the morning it matters you will
+not read it either.
+
+| Variable | Meaning | Default |
+| --- | --- | --- |
+| `NTFY_URL` | Full URL of the ntfy server to publish to | — (unset turns the push off) |
+| `NTFY_TOPIC` | Topic to publish on | — (unset turns the push off) |
+| `NTFY_USER` / `NTFY_PASSWORD` | Basic auth for a publish-capable ntfy user | none |
+| `NTFY_DUE_WINDOW_DAYS` | How many days ahead counts as due | `5` |
+| `NTFY_DIGEST_HOUR` / `NTFY_DIGEST_MINUTE` | Local time to publish at | `08:00` |
+| `NTFY_LANG` | `pl` or `en` | `pl` |
+
+Leaving `NTFY_URL` or `NTFY_TOPIC` empty disables the feature rather than failing the boot, the
+same rule `API_TOKENS` follows. The password belongs in Infisical with the rest.
+
+The window is deliberately one flat number rather than the per-frequency `dueSoonThresholdDays`
+the dashboard colours by. The dashboard answers "is this bill in trouble"; the push answers "what
+do I owe this week", and one answer per bill is enough.
+
+Overdue bills raise the ntfy priority to 5 and add a siren tag, so the phone treats a missed
+payment differently from one due on Friday.
+
+To prove the wiring without waiting for tomorrow morning:
+
+```bash
+curl -X POST 'http://localhost:8000/api/notifications/send-push?lang=pl'
+```
+
+That runs exactly what the schedule runs. It reports `alert_count: 0` and sends nothing when
+nothing is due, which is a pass, not a failure. Note this is a `POST`, so an `API_TOKENS` token
+cannot call it — those are read-only by design.
+
+Scheduling is in-process: each run schedules only the next one, so a restart part-way through the
+day does not replay a push that already went out. There is no cron entry and no systemd timer to
+keep in step.
