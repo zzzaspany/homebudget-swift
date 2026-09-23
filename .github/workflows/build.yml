@@ -170,8 +170,8 @@ jobs:
           sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
           xcodebuild -version
 
-      - name: Install XcodeGen and xcbeautify
-        run: brew install xcodegen xcbeautify
+      - name: Install XcodeGen
+        run: brew install xcodegen
 
       # The project is generated rather than committed, so CI has to make it the same way a person
       # does — which also proves project.yml still describes a buildable project.
@@ -184,16 +184,11 @@ jobs:
       # the change under test. Simulator builds sign locally, so no certificates are needed.
       - name: Build the app and the widget
         working-directory: Packages/HomeBudgetiOS
-        # `shell: bash` rather than the default, because that is what sets `pipefail`. Without it
-        # the pipe reports xcbeautify's exit status and a failed build passes CI silently.
-        shell: bash
         run: |
-          set -o pipefail
           xcodebuild -project HomeBudget.xcodeproj -scheme HomeBudget \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-            build \
-            | xcbeautify --renderer github-actions
+            build
 
   # Only on a tag. This job costs about eleven minutes, eight of them compiling Vapor, and a merge
   # is not a release - an image nobody pulls between one release and the next is built for nobody.

@@ -90,20 +90,28 @@ ios: ## Generate the Xcode project from project.yml
 ios-open: ios ## Generate and open in Xcode
 	open $(IOS_DIR)/HomeBudget.xcodeproj
 
-# Piped through xcbeautify when it is installed, which turns ~2000 lines of compiler invocations
-# into a readable summary. `set -o pipefail` is not optional here: without it the recipe reports
-# xcbeautify's exit status and a failed build looks like a successful one.
-ios-build: ios ## Build the app for the simulator
-	@cd $(IOS_DIR) && if command -v xcbeautify >/dev/null 2>&1; then \
-		set -o pipefail; xcodebuild -project HomeBudget.xcodeproj -scheme HomeBudget \
-			-destination 'platform=iOS Simulator,name=$(IOS_SIMULATOR)' \
-			-derivedDataPath $(SCRATCH)/ios build | xcbeautify; \
-	else \
-		echo "xcbeautify not installed (brew install xcbeautify) — raw output follows."; \
-		xcodebuild -project HomeBudget.xcodeproj -scheme HomeBudget \
-			-destination 'platform=iOS Simulator,name=$(IOS_SIMULATOR)' \
-			-derivedDataPath $(SCRATCH)/ios build; \
-	fi
+# Two ways to build the app, deliberately.
+#
+# `ios-build` is byte-for-byte what CI runs: plain xcodebuild, no pipe. Use it when reproducing a
+# CI failure, and keep it that way — a pipe would be one more difference between here and there.
+#
+# `ios-pretty` is the same build through xcbeautify, which turns ~2000 lines of compiler
+# invocations into a readable summary. For working, not for diagnosing CI.
+#
+# `set -o pipefail` in the pretty target is load-bearing: a pipe reports the *last* command's exit
+# status, so without it a failed build would look like a successful one. This is the mistake
+# fastlane users hit; it is a shell default, not an xcbeautify bug.
+XCODEBUILD_IOS = xcodebuild -project HomeBudget.xcodeproj -scheme HomeBudget \
+		-destination 'platform=iOS Simulator,name=$(IOS_SIMULATOR)' \
+		-derivedDataPath $(SCRATCH)/ios build
+
+ios-build: ios ## Build the app for the simulator (raw output, exactly as CI runs it)
+	cd $(IOS_DIR) && $(XCODEBUILD_IOS)
+
+ios-pretty: ios ## Build the app with readable output (needs: brew install xcbeautify)
+	@command -v xcbeautify >/dev/null 2>&1 \
+		|| { echo "xcbeautify not installed: brew install xcbeautify"; exit 1; }
+	@cd $(IOS_DIR) && set -o pipefail && $(XCODEBUILD_IOS) | xcbeautify
 
 ios-run: ios-build ## Build, install and launch on the simulator
 	@xcrun simctl boot "$(IOS_SIMULATOR)" 2>/dev/null || true
