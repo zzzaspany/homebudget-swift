@@ -19,7 +19,9 @@ struct DashboardView {
         root.appending(header())
 
         guard let dashboard = state.dashboard else {
-            root.appending(state.loadError.map(errorPanel) ?? DOM.element("p", class: "muted", text: UIString.loading(language)))
+            root.appending(
+                state.loadError.map(errorPanel)
+                    ?? DOM.element("p", class: "muted", text: UIString.loading(language)))
             return
         }
 
@@ -277,7 +279,8 @@ struct DashboardView {
         guard !expenses.isEmpty else { return panel.appending(empty(.emptyExpenses)) }
 
         let head = DOM.element("tr").appending(
-            ([.columnName, .columnAmount, .columnFrequency, .columnDue, .columnStatus, .columnActions] as [UIString])
+            ([.columnName, .columnAmount, .columnFrequency, .columnDue, .columnStatus, .columnActions]
+                as [UIString])
                 .map { DOM.element("th", text: $0(language)) }
         )
 
@@ -339,8 +342,11 @@ struct DashboardView {
         guard !state.payments.isEmpty else { return panel.appending(empty(.emptyPayments)) }
 
         let head = DOM.element("tr").appending(
-            ([.columnName, .columnCategory, .columnPeriod, .columnAmount, .columnDatePaid, .columnPaidBy, .columnInvoice] as [UIString])
-                .map { DOM.element("th", text: $0(language)) }
+            ([
+                .columnName, .columnCategory, .columnPeriod, .columnAmount, .columnDatePaid, .columnPaidBy,
+                .columnInvoice,
+            ] as [UIString])
+            .map { DOM.element("th", text: $0(language)) }
         )
 
         let rows = state.payments.prefix(25).map { payment in

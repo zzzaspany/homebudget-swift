@@ -51,9 +51,10 @@ struct ChartsScreen: View {
                         angularInset: 1.5
                     )
                     .cornerRadius(4)
-                    .foregroundStyle(Color.chartPalette[
-                        (shares.firstIndex { $0.category == share.category } ?? 0)
-                            % Color.chartPalette.count])
+                    .foregroundStyle(
+                        Color.chartPalette[
+                            (shares.firstIndex { $0.category == share.category } ?? 0)
+                                % Color.chartPalette.count])
                 }
                 .chartLegend(.hidden)
                 .frame(height: 240)
@@ -171,4 +172,3 @@ extension Color {
         Color(red: 0.55, green: 0.36, blue: 0.96),
     ]
 }
-

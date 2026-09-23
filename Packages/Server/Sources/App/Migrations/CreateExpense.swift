@@ -44,7 +44,9 @@ struct CreatePayment: AsyncMigration {
         try await database.schema(PaymentModel.schema)
             .id()
             // Restricted rather than cascading: payment history outlives the expense it belonged to.
-            .field("expense_id", .uuid, .required, .references(ExpenseModel.schema, "id", onDelete: .restrict))
+            .field(
+                "expense_id", .uuid, .required, .references(ExpenseModel.schema, "id", onDelete: .restrict)
+            )
             .field("amount_paid", .double, .required)
             .field("date_paid", .date, .required)
             .field("period", .string, .required)

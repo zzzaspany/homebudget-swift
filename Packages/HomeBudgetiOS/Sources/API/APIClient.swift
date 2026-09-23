@@ -148,7 +148,6 @@ struct ExpenseInput {
     }
 }
 
-
 enum ReportKind: String, CaseIterable, Identifiable {
     case csv
     case pdf

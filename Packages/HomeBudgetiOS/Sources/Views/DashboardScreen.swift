@@ -19,12 +19,12 @@ final class DashboardModel {
 
     func load() async {
         #if DEBUG
-            if DevelopMode.isOn {
-                dashboard = DevelopMode.dashboard
-                payments = DevelopMode.payments
-                publishToWidget()
-                return
-            }
+        if DevelopMode.isOn {
+            dashboard = DevelopMode.dashboard
+            payments = DevelopMode.payments
+            publishToWidget()
+            return
+        }
         #endif
 
         isLoading = true
@@ -61,12 +61,12 @@ final class DashboardModel {
 
     func save(_ input: ExpenseInput, editing id: String?) async {
         #if DEBUG
-            if DevelopMode.isOn {
-                DevelopMode.apply(input, editing: id)
-                dashboard = DevelopMode.dashboard
-                publishToWidget()
-                return
-            }
+        if DevelopMode.isOn {
+            DevelopMode.apply(input, editing: id)
+            dashboard = DevelopMode.dashboard
+            publishToWidget()
+            return
+        }
         #endif
 
         do {
@@ -85,12 +85,12 @@ final class DashboardModel {
 
     func delete(_ expense: Expense) async {
         #if DEBUG
-            if DevelopMode.isOn {
-                DevelopMode.remove(id: expense.id)
-                dashboard = DevelopMode.dashboard
-                publishToWidget()
-                return
-            }
+        if DevelopMode.isOn {
+            DevelopMode.remove(id: expense.id)
+            dashboard = DevelopMode.dashboard
+            publishToWidget()
+            return
+        }
         #endif
 
         do {
@@ -111,7 +111,8 @@ final class DashboardModel {
 
         let history = PriceHistory.build(
             expenseID: expense.id,
-            payments: payments
+            payments:
+                payments
                 .filter { $0.expenseID == expense.id }
                 .map {
                     Payment(
@@ -120,7 +121,8 @@ final class DashboardModel {
                 })
 
         // The month the bill is actually falling due in, which is not necessarily this one.
-        let month = dashboard?.expenses
+        let month =
+            dashboard?.expenses
             .first { $0.expense.id == expense.id }?
             .dueDate?.month ?? CalendarDate.today().month
 
@@ -144,7 +146,7 @@ final class DashboardModel {
 
     func pay(_ expense: Expense, amount: Double?, reloading: Bool = true) async {
         #if DEBUG
-            if DevelopMode.isOn { return }
+        if DevelopMode.isOn { return }
         #endif
 
         do {
@@ -273,12 +275,13 @@ struct DashboardScreen: View {
         .task {
             if model.dashboard == nil { await model.load() }
             #if DEBUG
-                // Opens the price history straight away, so it can be looked at without
-                // driving the simulator through the taps that normally reach it.
-                if DevelopMode.isOn, DevelopMode.initialSheet == "history" {
-                    historyTarget = model.dashboard?.expenses
-                        .first { $0.expense.isVariable }?.expense
-                }
+            // Opens the price history straight away, so it can be looked at without
+            // driving the simulator through the taps that normally reach it.
+            if DevelopMode.isOn, DevelopMode.initialSheet == "history" {
+                historyTarget =
+                    model.dashboard?.expenses
+                    .first { $0.expense.isVariable }?.expense
+            }
             #endif
         }
         .toolbar {
@@ -318,7 +321,10 @@ struct DashboardScreen: View {
                         }
                     }
 
-                    Button(UIString.actionSignOut(language), systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
+                    Button(
+                        UIString.actionSignOut(language), systemImage: "rectangle.portrait.and.arrow.right",
+                        role: .destructive
+                    ) {
                         Task { await session.signOut() }
                     }
                 } label: {
@@ -392,18 +398,26 @@ struct DashboardScreen: View {
     private func summary(_ kpis: Dashboard.KPIs) -> some View {
         GlassEffectContainer(spacing: 16) {
             LazyVGrid(columns: summaryColumns, spacing: 16) {
-                figure(UIString.kpiMonthlyBudget(language),
-                       NumberFormatting.currency(kpis.proRatedMonthly, language: language),
-                       tint: .accentColor)
-                figure(UIString.kpiSinkingFund(language),
-                       NumberFormatting.currency(kpis.sinkingFundTotal, language: language),
-                       tint: .teal)
-                figure(UIString.kpiMonthlyDues(language),
-                       NumberFormatting.currency(kpis.monthlyTotal, language: language))
-                figure(UIString.kpiYearlyDues(language),
-                       NumberFormatting.currency(kpis.yearlyTotal, language: language))
+                figure(
+                    UIString.kpiMonthlyBudget(language),
+                    NumberFormatting.currency(kpis.proRatedMonthly, language: language),
+                    tint: .accentColor)
+                figure(
+                    UIString.kpiSinkingFund(language),
+                    NumberFormatting.currency(kpis.sinkingFundTotal, language: language),
+                    tint: .teal)
+                figure(
+                    UIString.kpiMonthlyDues(language),
+                    NumberFormatting.currency(kpis.monthlyTotal, language: language))
+                figure(
+                    UIString.kpiYearlyDues(language),
+                    NumberFormatting.currency(kpis.yearlyTotal, language: language))
             }
-            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { summaryWidth = $0 }
+            .onGeometryChange(for: CGFloat.self) {
+                $0.size.width
+            } action: {
+                summaryWidth = $0
+            }
         }
     }
 
@@ -440,10 +454,12 @@ struct DashboardScreen: View {
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.name).font(.body.weight(.medium))
-                            Text(Localization.notificationMessage(
-                                status: item.status, daysLeft: item.daysLeft, language: language))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            Text(
+                                Localization.notificationMessage(
+                                    status: item.status, daysLeft: item.daysLeft, language: language)
+                            )
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                         }
 
                         Spacer()
@@ -554,11 +570,15 @@ struct ExpenseRow: View {
         .contentShape(.rect)
         .onTapGesture(perform: onHistory)
         .contextMenu {
-            Button(UIString.actionHistory(language), systemImage: "chart.line.uptrend.xyaxis", action: onHistory)
-            Button(UIString.actionAddToCalendar(language), systemImage: "calendar.badge.plus", action: onAddToCalendar)
+            Button(
+                UIString.actionHistory(language), systemImage: "chart.line.uptrend.xyaxis", action: onHistory)
+            Button(
+                UIString.actionAddToCalendar(language), systemImage: "calendar.badge.plus",
+                action: onAddToCalendar)
             Divider()
             Button(UIString.actionEdit(language), systemImage: "pencil", action: onEdit)
-            Button(UIString.actionDelete(language), systemImage: "trash", role: .destructive, action: onDelete)
+            Button(
+                UIString.actionDelete(language), systemImage: "trash", role: .destructive, action: onDelete)
         }
     }
 }
@@ -586,7 +606,6 @@ struct StatusBadge: View {
             .foregroundStyle(color)
     }
 }
-
 
 /// Wraps the editor's subject so `sheet(item:)` can tell "add" from "edit" — a nil expense is a
 /// valid state for the sheet, which an optional binding alone cannot express.

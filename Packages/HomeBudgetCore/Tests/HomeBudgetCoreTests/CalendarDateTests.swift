@@ -27,8 +27,12 @@ struct CalendarDateTests {
         let date = CalendarDate(year: 2026, month: 8, day: 15)
         #expect(date.addingDays(14) == CalendarDate(year: 2026, month: 8, day: 29))
         #expect(date.addingDays(20) == CalendarDate(year: 2026, month: 9, day: 4))
-        #expect(CalendarDate(year: 2026, month: 12, day: 31).addingDays(1) == CalendarDate(year: 2027, month: 1, day: 1))
-        #expect(CalendarDate(year: 2024, month: 2, day: 28).addingDays(1) == CalendarDate(year: 2024, month: 2, day: 29))
+        #expect(
+            CalendarDate(year: 2026, month: 12, day: 31).addingDays(1)
+                == CalendarDate(year: 2027, month: 1, day: 1))
+        #expect(
+            CalendarDate(year: 2024, month: 2, day: 28).addingDays(1)
+                == CalendarDate(year: 2024, month: 2, day: 29))
     }
 
     @Test("Days between two dates, signed")

@@ -13,7 +13,11 @@ public enum CSVReport {
     ) -> String {
         var rows: [[String]] = []
 
-        rows.append([language == .pl ? "HOMEBUDGET — RAPORT KOSZTÓW UTRZYMANIA DOMU" : "HOMEBUDGET — HOME MAINTENANCE EXPENSE REPORT"])
+        rows.append([
+            language == .pl
+                ? "HOMEBUDGET — RAPORT KOSZTÓW UTRZYMANIA DOMU"
+                : "HOMEBUDGET — HOME MAINTENANCE EXPENSE REPORT"
+        ])
         rows.append([language == .pl ? "Data wygenerowania" : "Generation Date", generatedAt.iso8601])
         rows.append([language == .pl ? "Użytkownik" : "User", userName])
         rows.append([])
@@ -21,11 +25,14 @@ public enum CSVReport {
         rows.append([language == .pl ? "PODSUMOWANIE KPI" : "KPI SUMMARY"])
         let currency = language == .pl ? "zł" : "PLN"
         rows.append([
-            language == .pl ? "Średniomiesięczny Budżet (\(currency))" : "Average Monthly Budget (\(currency))",
+            language == .pl
+                ? "Średniomiesięczny Budżet (\(currency))" : "Average Monthly Budget (\(currency))",
             amount(dashboard.kpis.proRatedMonthly),
         ])
         rows.append([
-            language == .pl ? "Miesięczna Rezerwa (Sinking Fund) (\(currency))" : "Monthly Savings Reserve (Sinking Fund) (\(currency))",
+            language == .pl
+                ? "Miesięczna Rezerwa (Sinking Fund) (\(currency))"
+                : "Monthly Savings Reserve (Sinking Fund) (\(currency))",
             amount(dashboard.kpis.sinkingFundTotal),
         ])
         rows.append([
@@ -41,8 +48,14 @@ public enum CSVReport {
         rows.append([language == .pl ? "WYKAZ WYDATKÓW CYKLICZNYCH" : "LIST OF RECURRING EXPENSES"])
         rows.append(
             language == .pl
-                ? ["Nazwa wydatku", "Kwota (\(currency))", "Częstotliwość", "Dzień płatności", "Miesiąc", "Kategoria", "Rachunek Zmienny", "Status"]
-                : ["Expense Name", "Amount (\(currency))", "Frequency", "Due Day", "Due Month", "Category", "Variable Bill", "Status"]
+                ? [
+                    "Nazwa wydatku", "Kwota (\(currency))", "Częstotliwość", "Dzień płatności", "Miesiąc",
+                    "Kategoria", "Rachunek Zmienny", "Status",
+                ]
+                : [
+                    "Expense Name", "Amount (\(currency))", "Frequency", "Due Day", "Due Month", "Category",
+                    "Variable Bill", "Status",
+                ]
         )
         for summary in dashboard.expenses {
             let expense = summary.expense
@@ -62,8 +75,14 @@ public enum CSVReport {
         rows.append([language == .pl ? "HISTORIA WPŁAT I RACHUNKÓW" : "PAYMENT AND BILL LOGS"])
         rows.append(
             language == .pl
-                ? ["Nazwa wydatku", "Kategoria", "Okres", "Zapłacono (\(currency))", "Data wpłaty", "Opłacił(a)"]
-                : ["Expense Name", "Category", "Period", "Amount Paid (\(currency))", "Payment Date", "Paid By"]
+                ? [
+                    "Nazwa wydatku", "Kategoria", "Okres", "Zapłacono (\(currency))", "Data wpłaty",
+                    "Opłacił(a)",
+                ]
+                : [
+                    "Expense Name", "Category", "Period", "Amount Paid (\(currency))", "Payment Date",
+                    "Paid By",
+                ]
         )
         for payment in payments {
             rows.append([
@@ -85,8 +104,9 @@ public enum CSVReport {
 
     /// Quotes a field only when it would otherwise break the row, doubling any embedded quotes.
     static func escape(_ field: String) -> String {
-        guard field.contains(";") || field.contains("\"") || field.contains("\n")
-            || field.contains("\r")
+        guard
+            field.contains(";") || field.contains("\"") || field.contains("\n")
+                || field.contains("\r")
         else {
             return field
         }

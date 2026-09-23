@@ -58,7 +58,9 @@ struct PaymentSheet: View {
                         } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("\(UIString.suggestionUse(language)) \(NumberFormatting.currency(suggestion.amount, language: language))")
+                                    Text(
+                                        "\(UIString.suggestionUse(language)) \(NumberFormatting.currency(suggestion.amount, language: language))"
+                                    )
                                     // Why, not just how much: a figure the user cannot account for
                                     // is one they have to check anyway.
                                     Text(basis(suggestion.basis))
@@ -94,7 +96,8 @@ struct PaymentSheet: View {
     private func basis(_ basis: AmountSuggestion.Basis) -> String {
         switch basis {
         case .sameMonth(let date):
-            return "\(UIString.suggestionSameMonth(language)) (\(Localization.dateLabel(date, language: language)))"
+            return
+                "\(UIString.suggestionSameMonth(language)) (\(Localization.dateLabel(date, language: language)))"
         case .sameMonthAverage(let count):
             return "\(UIString.suggestionSameMonthAverage(language)) (\(count))"
         case .overallAverage(let count):

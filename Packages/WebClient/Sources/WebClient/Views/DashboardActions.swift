@@ -5,7 +5,6 @@ import JavaScriptKit
 extension DashboardView {
     private var api: APIClient { APIClient() }
 
-
     // MARK: - Payments
 
     func pay(expenseID: String, amount: Double?) {
@@ -52,7 +51,8 @@ extension DashboardView {
                 do {
                     try await api.pay(expenseID: expense.id, amount: amount)
                     Modal.dismiss()
-                    Toast.show("\(expense.name): \(NumberFormatting.currency(amount, language: state.language))")
+                    Toast.show(
+                        "\(expense.name): \(NumberFormatting.currency(amount, language: state.language))")
                     onRefresh()
                 } catch {
                     Toast.show(String(describing: error), kind: .failure)
@@ -73,7 +73,8 @@ extension DashboardView {
         let language = state.language
 
         let nameField = field(type: "text", value: existing?.name ?? "")
-        let amountField = field(type: "number", value: existing.map { NumberFormatting.plain($0.amount) } ?? "")
+        let amountField = field(
+            type: "number", value: existing.map { NumberFormatting.plain($0.amount) } ?? "")
         amountField.attribute("step", "0.01")
         let categoryField = field(type: "text", value: existing?.category ?? "")
         let dueDayField = field(type: "number", value: existing.map { "\($0.dueDay)" } ?? "1")
@@ -82,7 +83,8 @@ extension DashboardView {
 
         let dueMonthField = DOM.element("select", class: "input")
         for month in 1...12 {
-            let option = DOM.element("option", text: Localization.monthAbbreviation(month, language: language))
+            let option = DOM.element(
+                "option", text: Localization.monthAbbreviation(month, language: language))
             option.value = .string("\(month)")
             if existing?.dueMonth == month { option.selected = .boolean(true) }
             dueMonthField.appending(option)
@@ -127,7 +129,9 @@ extension DashboardView {
                 let category = categoryField.value.string, !category.isEmpty,
                 let dueDay = Int(dueDayField.value.string ?? "")
             else {
-                Toast.show(language == .pl ? "Uzupełnij wymagane pola" : "Fill in the required fields", kind: .failure)
+                Toast.show(
+                    language == .pl ? "Uzupełnij wymagane pola" : "Fill in the required fields",
+                    kind: .failure)
                 return
             }
 
@@ -169,7 +173,8 @@ extension DashboardView {
 
     func confirmDelete(_ expense: Expense) {
         let language = state.language
-        let question = language == .pl
+        let question =
+            language == .pl
             ? "Usunąć „\(expense.name)”?"
             : "Delete “\(expense.name)”?"
 
@@ -281,7 +286,9 @@ extension DashboardView {
         let save = DOM.element("button", class: "button primary", text: UIString.actionSave(language))
         save.on("click") {
             guard let amount = Double(amountField.value.string ?? ""), amount > 0 else {
-                Toast.show(language == .pl ? "Podaj kwotę większą od zera" : "Enter an amount above zero", kind: .failure)
+                Toast.show(
+                    language == .pl ? "Podaj kwotę większą od zera" : "Enter an amount above zero",
+                    kind: .failure)
                 return
             }
             Preferences.setBudget(amount, for: category)
@@ -324,7 +331,8 @@ extension DashboardView {
     }
 
     private func cancelButton(label: String? = nil) -> JSObject {
-        let button = DOM.element("button", class: "button", text: label ?? UIString.actionCancel(state.language))
+        let button = DOM.element(
+            "button", class: "button", text: label ?? UIString.actionCancel(state.language))
         button.on("click") { Modal.dismiss() }
         return button
     }

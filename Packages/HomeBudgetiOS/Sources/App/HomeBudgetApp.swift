@@ -61,15 +61,16 @@ struct RootView: View {
                 LoginWebView(
                     session: session,
                     onSignedIn: { showingLogin = false },
-                    onFailure: { showingLogin = false })
-                    .ignoresSafeArea(edges: .bottom)
-                    .navigationTitle(UIString.signInTitle(language))
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button(UIString.actionCancel(language)) { showingLogin = false }
-                        }
+                    onFailure: { showingLogin = false }
+                )
+                .ignoresSafeArea(edges: .bottom)
+                .navigationTitle(UIString.signInTitle(language))
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(UIString.actionCancel(language)) { showingLogin = false }
                     }
+                }
             }
         }
     }
@@ -131,11 +132,11 @@ struct MainTabs: View {
 
         var start = Screen.expenses
         #if DEBUG
-            if DevelopMode.isOn, let named = DevelopMode.initialTab,
-                let screen = Screen(rawValue: named)
-            {
-                start = screen
-            }
+        if DevelopMode.isOn, let named = DevelopMode.initialTab,
+            let screen = Screen(rawValue: named)
+        {
+            start = screen
+        }
         #endif
         _selection = State(initialValue: start)
     }

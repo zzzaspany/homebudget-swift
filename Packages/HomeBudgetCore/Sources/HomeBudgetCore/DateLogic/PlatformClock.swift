@@ -1,9 +1,9 @@
 #if canImport(WASILibc)
-    import WASILibc
+import WASILibc
 #elseif canImport(Darwin)
-    import Darwin
+import Darwin
 #elseif canImport(Glibc)
-    import Glibc
+import Glibc
 #endif
 
 /// The one place in the core that reads the wall clock.

@@ -207,7 +207,7 @@ public enum DashboardBuilder {
     }
 }
 
-infix operator %%: MultiplicationPrecedence
+infix operator %% : MultiplicationPrecedence
 
 /// Modulo that is always non-negative, so month arithmetic works when the cycle anchor is later in the year.
 func %% (lhs: Int, rhs: Int) -> Int {

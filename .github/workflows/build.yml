@@ -75,6 +75,16 @@ jobs:
               - 'Packages/HomeBudgetCore/**'
               - '.github/workflows/build.yml'
 
+  format:
+    name: Formatting
+    runs-on: ubuntu-latest
+    container: swift:6.3.3-noble
+    steps:
+      - uses: actions/checkout@v4
+      # `lint`, never `format`: CI reports, it does not rewrite. The rules live in .swift-format,
+      # so this and `make lint` cannot disagree.
+      - run: swift-format lint --recursive --strict Packages/*/Sources Packages/*/Tests
+
   test:
     runs-on: ubuntu-latest
     container: swift:6.3.3-noble

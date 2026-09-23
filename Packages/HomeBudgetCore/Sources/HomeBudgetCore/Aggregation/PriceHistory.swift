@@ -12,7 +12,8 @@ public struct PriceHistory: Codable, Hashable, Sendable {
     }
 
     public static func build(expenseID: String, payments: [Payment]) -> PriceHistory {
-        let entries = payments
+        let entries =
+            payments
             .filter { $0.expenseID == expenseID }
             .sorted { $0.datePaid < $1.datePaid }
             .map { Entry(datePaid: $0.datePaid, amountPaid: $0.amountPaid, period: $0.period) }

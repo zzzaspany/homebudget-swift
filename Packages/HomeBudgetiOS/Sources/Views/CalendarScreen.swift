@@ -44,7 +44,9 @@ struct CalendarScreen: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(language == .pl ? "Dziś" : "Today") {
                         let today = CalendarDate.today()
-                        withAnimation { year = today.year; month = today.month }
+                        withAnimation {
+                            year = today.year; month = today.month
+                        }
                     }
                 }
             }
@@ -53,8 +55,12 @@ struct CalendarScreen: View {
 
     private var monthHeader: some View {
         HStack {
-            Button { step(-1) } label: { Image(systemName: "chevron.left") }
-                .buttonStyle(.glass)
+            Button {
+                step(-1)
+            } label: {
+                Image(systemName: "chevron.left")
+            }
+            .buttonStyle(.glass)
 
             Spacer()
             Text("\(Localization.monthName(month, language: language)) \(String(year))")
@@ -62,8 +68,12 @@ struct CalendarScreen: View {
                 .contentTransition(.numericText())
             Spacer()
 
-            Button { step(1) } label: { Image(systemName: "chevron.right") }
-                .buttonStyle(.glass)
+            Button {
+                step(1)
+            } label: {
+                Image(systemName: "chevron.right")
+            }
+            .buttonStyle(.glass)
         }
     }
 
@@ -120,7 +130,8 @@ struct CalendarScreen: View {
         .frame(height: 62)
         .glassEffect(
             .regular.tint(day.isToday ? Color.accentColor.opacity(0.2) : nil),
-            in: .rect(cornerRadius: 12))
+            in: .rect(cornerRadius: 12)
+        )
         .overlay {
             if selected?.date == day.date {
                 RoundedRectangle(cornerRadius: 12).strokeBorder(Color.accentColor, lineWidth: 2)

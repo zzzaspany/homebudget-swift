@@ -57,10 +57,10 @@ final class AutheliaSession {
     /// 401, so a redirect away from our own host means the session is gone.
     func refresh() async {
         #if DEBUG
-            if DevelopMode.isOn {
-                state = .signedIn(user: UIString.developMode(.pl))
-                return
-            }
+        if DevelopMode.isOn {
+            state = .signedIn(user: UIString.developMode(.pl))
+            return
+        }
         #endif
 
         guard hasCookie else {

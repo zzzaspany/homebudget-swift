@@ -168,6 +168,7 @@ struct StatusCalculatorTests {
         #expect(
             StatusCalculator.targetPeriod(
                 for: expense(.yearly, dueDay: 1, dueMonth: 11, lastPaid: "2026"), today: today) == "2027")
-        #expect(StatusCalculator.targetPeriod(for: expense(.biweekly, dueDay: 17), today: today) == "2026-W33")
+        #expect(
+            StatusCalculator.targetPeriod(for: expense(.biweekly, dueDay: 17), today: today) == "2026-W33")
     }
 }
