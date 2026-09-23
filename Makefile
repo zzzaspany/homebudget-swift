@@ -1,6 +1,9 @@
 # HomeBudget — everything you need to build, test, run and ship the app.
 # Run `make` on its own for the list.
 
+# Recipes below use `set -o pipefail`, which /bin/sh does not have.
+SHELL := /bin/bash
+
 # --- Environment -------------------------------------------------------------
 #
 # Builds keep their scratch directory on local disk. The repository lives on an SMB share where
@@ -87,10 +90,20 @@ ios: ## Generate the Xcode project from project.yml
 ios-open: ios ## Generate and open in Xcode
 	open $(IOS_DIR)/HomeBudget.xcodeproj
 
+# Piped through xcbeautify when it is installed, which turns ~2000 lines of compiler invocations
+# into a readable summary. `set -o pipefail` is not optional here: without it the recipe reports
+# xcbeautify's exit status and a failed build looks like a successful one.
 ios-build: ios ## Build the app for the simulator
-	cd $(IOS_DIR) && xcodebuild -project HomeBudget.xcodeproj -scheme HomeBudget \
-		-destination 'platform=iOS Simulator,name=$(IOS_SIMULATOR)' \
-		-derivedDataPath $(SCRATCH)/ios build
+	@cd $(IOS_DIR) && if command -v xcbeautify >/dev/null 2>&1; then \
+		set -o pipefail; xcodebuild -project HomeBudget.xcodeproj -scheme HomeBudget \
+			-destination 'platform=iOS Simulator,name=$(IOS_SIMULATOR)' \
+			-derivedDataPath $(SCRATCH)/ios build | xcbeautify; \
+	else \
+		echo "xcbeautify not installed (brew install xcbeautify) — raw output follows."; \
+		xcodebuild -project HomeBudget.xcodeproj -scheme HomeBudget \
+			-destination 'platform=iOS Simulator,name=$(IOS_SIMULATOR)' \
+			-derivedDataPath $(SCRATCH)/ios build; \
+	fi
 
 ios-run: ios-build ## Build, install and launch on the simulator
 	@xcrun simctl boot "$(IOS_SIMULATOR)" 2>/dev/null || true
