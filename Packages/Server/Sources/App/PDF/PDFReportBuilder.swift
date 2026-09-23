@@ -64,7 +64,9 @@ struct PDFReportBuilder {
 
     // MARK: - Report
 
-    func build(dashboard: Dashboard, payments: [PaymentRecord], userName: String, generatedAt: CalendarDate) -> Data {
+    func build(dashboard: Dashboard, payments: [PaymentRecord], userName: String, generatedAt: CalendarDate)
+        -> Data
+    {
         let layout = Layout(startY: Self.pageHeight - Self.margin)
 
         titleBlock(layout, userName: userName, generatedAt: generatedAt)
@@ -76,7 +78,8 @@ struct PDFReportBuilder {
     }
 
     private func titleBlock(_ layout: Layout, userName: String, generatedAt: CalendarDate) {
-        let title = language == .pl
+        let title =
+            language == .pl
             ? "HOMEBUDGET — RAPORT FINANSOWY DOMU"
             : "HOMEBUDGET — HOME FINANCIAL REPORT"
         layout.append(.text(title, x: Self.margin, y: layout.cursor, size: 18, bold: true, color: .ink))
@@ -249,11 +252,14 @@ struct PDFReportBuilder {
             for (index, column) in columns.enumerated() {
                 let value = index < row.count ? row[index] : ""
                 let text = truncate(value, to: widths[index] - 10, size: Self.tableFontSize)
-                let offset = column.alignment == .right
+                let offset =
+                    column.alignment == .right
                     ? widths[index] - 5 - regular.width(of: text, size: Self.tableFontSize)
                     : 5
                 layout.append(
-                    .text(text, x: x + offset, y: layout.cursor, size: Self.tableFontSize, bold: false, color: .body))
+                    .text(
+                        text, x: x + offset, y: layout.cursor, size: Self.tableFontSize, bold: false,
+                        color: .body))
                 x += widths[index]
             }
 
@@ -272,11 +278,14 @@ struct PDFReportBuilder {
 
         var x = Self.margin
         for (index, column) in columns.enumerated() {
-            let offset = column.alignment == .right
+            let offset =
+                column.alignment == .right
                 ? widths[index] - 5 - bold.width(of: column.title, size: Self.tableFontSize)
                 : 5
             layout.append(
-                .text(column.title, x: x + offset, y: layout.cursor, size: Self.tableFontSize, bold: true, color: .white))
+                .text(
+                    column.title, x: x + offset, y: layout.cursor, size: Self.tableFontSize, bold: true,
+                    color: .white))
             x += widths[index]
         }
         layout.cursor -= 20
@@ -307,12 +316,13 @@ struct PDFReportBuilder {
         let pagesObject = document.reserve()
 
         let footers = layout.pages.indices.map { footerText(page: $0 + 1, of: layout.pages.count) }
-        let allText = layout.pages.flatMap { page in
-            page.compactMap { command -> String? in
-                if case .text(let value, _, _, _, _, _) = command { return value }
-                return nil
-            }
-        } + footers
+        let allText =
+            layout.pages.flatMap { page in
+                page.compactMap { command -> String? in
+                    if case .text(let value, _, _, _, _, _) = command { return value }
+                    return nil
+                }
+            } + footers
 
         let regularObject = PDFFontEmbedder(font: regular, baseName: "DejaVuSans")
             .embed(in: document, texts: allText)
@@ -379,7 +389,8 @@ struct PDFReportBuilder {
     }
 
     private func footer(page: Int, of total: Int) -> String {
-        let caption = language == .pl
+        let caption =
+            language == .pl
             ? "HomeBudget — raport kosztów utrzymania domu"
             : "HomeBudget — home maintenance expense report"
         let counter = footerText(page: page, of: total)

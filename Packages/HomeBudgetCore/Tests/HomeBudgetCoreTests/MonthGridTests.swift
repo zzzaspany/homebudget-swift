@@ -6,7 +6,8 @@ import Testing
 struct MonthGridTests {
     let today = CalendarDate(year: 2026, month: 9, day: 3)
 
-    func expense(_ frequency: Frequency, dueDay: Int, dueMonth: Int? = nil, name: String = "Test") -> Expense {
+    func expense(_ frequency: Frequency, dueDay: Int, dueMonth: Int? = nil, name: String = "Test") -> Expense
+    {
         Expense(
             id: name, name: name, amount: 100, frequency: frequency, dueDay: dueDay,
             dueMonth: dueMonth, category: "Inne")

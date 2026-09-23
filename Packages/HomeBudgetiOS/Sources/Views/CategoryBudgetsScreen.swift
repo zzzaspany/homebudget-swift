@@ -84,11 +84,15 @@ struct CategoryBudgetsScreen: View {
                 ProgressView(value: fraction)
                     .tint(budget.isOverBudget ? .red : .accentColor)
                 HStack {
-                    Text("\(UIString.budgetOf(language)) \(NumberFormatting.currency(limit, language: language))")
+                    Text(
+                        "\(UIString.budgetOf(language)) \(NumberFormatting.currency(limit, language: language))"
+                    )
                     if budget.isOverBudget {
                         Spacer()
-                        Text("\(UIString.budgetOverBy(language)) \(NumberFormatting.currency(budget.overspend, language: language))")
-                            .foregroundStyle(.red)
+                        Text(
+                            "\(UIString.budgetOverBy(language)) \(NumberFormatting.currency(budget.overspend, language: language))"
+                        )
+                        .foregroundStyle(.red)
                     }
                 }
                 .font(.caption)

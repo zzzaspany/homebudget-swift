@@ -56,11 +56,13 @@ struct PriceHistoryContent: View {
                 .foregroundStyle(colour)
                 .contentTransition(.numericText())
 
-            Text(language == .pl
-                ? "od pierwszej wpłaty"
-                : "since the first payment")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            Text(
+                language == .pl
+                    ? "od pierwszej wpłaty"
+                    : "since the first payment"
+            )
+            .font(.footnote)
+            .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
@@ -82,23 +84,26 @@ struct PriceHistoryContent: View {
 
         return Chart(history.entries, id: \.datePaid) { entry in
             LineMark(
-                x: .value(UIString.columnPeriod(language),
-                          Localization.periodLabel(entry.period, language: language)),
+                x: .value(
+                    UIString.columnPeriod(language),
+                    Localization.periodLabel(entry.period, language: language)),
                 y: .value(UIString.columnAmount(language), entry.amountPaid)
             )
             .interpolationMethod(.monotone)
             .symbol(.circle)
 
             AreaMark(
-                x: .value(UIString.columnPeriod(language),
-                          Localization.periodLabel(entry.period, language: language)),
+                x: .value(
+                    UIString.columnPeriod(language),
+                    Localization.periodLabel(entry.period, language: language)),
                 yStart: .value(UIString.columnAmount(language), floor),
                 yEnd: .value(UIString.columnAmount(language), entry.amountPaid)
             )
             .interpolationMethod(.monotone)
-            .foregroundStyle(.linearGradient(
-                colors: [.accentColor.opacity(0.35), .clear],
-                startPoint: .top, endPoint: .bottom))
+            .foregroundStyle(
+                .linearGradient(
+                    colors: [.accentColor.opacity(0.35), .clear],
+                    startPoint: .top, endPoint: .bottom))
         }
         .chartYScale(domain: floor...ceiling)
         .frame(height: 220)
@@ -132,10 +137,10 @@ struct PriceHistoryContent: View {
 
     private func load() async {
         #if DEBUG
-            if DevelopMode.isOn {
-                history = DevelopMode.priceHistory(expenseID: expense.id)
-                return
-            }
+        if DevelopMode.isOn {
+            history = DevelopMode.priceHistory(expenseID: expense.id)
+            return
+        }
         #endif
 
         do {

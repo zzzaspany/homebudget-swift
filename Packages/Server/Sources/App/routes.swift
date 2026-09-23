@@ -31,7 +31,6 @@ func routes(_ app: Application) throws {
     try authenticated.register(collection: IdentityController())
 }
 
-
 /// What `/health` answers with.
 struct HealthResponse: Content {
     let status: String

@@ -240,10 +240,16 @@ db-reset: ## Delete every expense and payment. Asks first.
 
 # --- Housekeeping ------------------------------------------------------------
 
-lint: ## Format every Swift source in place
+format: ## Rewrite every Swift source to the house style (.swift-format)
 	@command -v swift-format >/dev/null 2>&1 \
 		&& swift-format format --in-place --recursive Packages/*/Sources Packages/*/Tests \
 		&& echo "Formatted." \
+		|| echo "swift-format not installed: brew install swift-format"
+
+lint: ## Check formatting without changing anything — the same check CI runs
+	@command -v swift-format >/dev/null 2>&1 \
+		&& swift-format lint --recursive --strict Packages/*/Sources Packages/*/Tests \
+		&& echo "Formatting is clean." \
 		|| echo "swift-format not installed: brew install swift-format"
 
 clean: ## Remove build products

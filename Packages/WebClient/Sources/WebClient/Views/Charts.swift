@@ -1,9 +1,9 @@
 #if canImport(WASILibc)
-    import WASILibc
+import WASILibc
 #elseif canImport(Darwin)
-    import Darwin
+import Darwin
 #elseif canImport(Glibc)
-    import Glibc
+import Glibc
 #endif
 
 import HomeBudgetCore
@@ -51,9 +51,11 @@ enum Charts {
         for (index, share) in shares.enumerated() {
             let sweep = share.proratedAmount / total * 360
             // A full circle cannot be expressed as an arc; draw two rings instead.
-            let path = sweep >= 359.99
+            let path =
+                sweep >= 359.99
                 ? ringPath(centre: centre, outer: outer, inner: inner)
-                : segmentPath(centre: centre, outer: outer, inner: inner, from: startAngle, to: startAngle + sweep)
+                : segmentPath(
+                    centre: centre, outer: outer, inner: inner, from: startAngle, to: startAngle + sweep)
 
             let segment = svgElement("path")
             segment.attribute("d", path)
@@ -129,7 +131,8 @@ enum Charts {
             DOM.element("div", class: "bar-chart").appending(bars),
             DOM.element(
                 "p", class: "muted small",
-                text: "\(UIString.chartPeak(language)): \(NumberFormatting.currency(peak, language: language))")
+                text:
+                    "\(UIString.chartPeak(language)): \(NumberFormatting.currency(peak, language: language))")
         )
     }
 

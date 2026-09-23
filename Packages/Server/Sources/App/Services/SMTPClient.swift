@@ -83,7 +83,8 @@ struct SMTPClient {
 
             func send(_ command: String, expecting codes: Set<Int>) async throws {
                 try await outbound.write(ByteBuffer(string: command + "\r\n"))
-                try await expect(codes, after: command.split(separator: " ").first.map(String.init) ?? command)
+                try await expect(
+                    codes, after: command.split(separator: " ").first.map(String.init) ?? command)
             }
 
             try await expect([220], after: "connect")

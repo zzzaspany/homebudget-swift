@@ -198,7 +198,8 @@ struct UpcomingWidget: Widget {
         .description(
             Language.device == .pl
                 ? "Najbliższe terminy płatności i ile dni zostało."
-                : "The next bills due, and how many days are left.")
+                : "The next bills due, and how many days are left."
+        )
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

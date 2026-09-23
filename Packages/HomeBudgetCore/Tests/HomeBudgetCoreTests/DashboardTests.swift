@@ -153,8 +153,10 @@ struct UpcomingTests {
     @Test("Nearest first, and the most overdue before that")
     func ordering() {
         let dashboard = DashboardBuilder.build(
-            expenses: [expense("later", day: 20), expense("overdue", day: 1),
-                       expense("soon", day: 10)],
+            expenses: [
+                expense("later", day: 20), expense("overdue", day: 1),
+                expense("soon", day: 10),
+            ],
             today: today)
 
         #expect(dashboard.upcoming(limit: 5).map(\.expense.id) == ["overdue", "soon", "later"])
@@ -163,9 +165,11 @@ struct UpcomingTests {
     @Test("Paid and inactive bills are not upcoming")
     func excluded() {
         let dashboard = DashboardBuilder.build(
-            expenses: [expense("open", day: 20),
-                       expense("paid", day: 21, paidPeriod: "2026-09"),
-                       expense("off", day: 22, active: false)],
+            expenses: [
+                expense("open", day: 20),
+                expense("paid", day: 21, paidPeriod: "2026-09"),
+                expense("off", day: 22, active: false),
+            ],
             today: today)
 
         #expect(dashboard.upcoming(limit: 5).map(\.expense.id) == ["open"])
@@ -223,10 +227,12 @@ struct CategoryBudgetTests {
         let today = CalendarDate(year: 2026, month: 9, day: 8)
         let dashboard = DashboardBuilder.build(
             expenses: [
-                Expense(id: "1", name: "small", amount: 50, frequency: .monthly, dueDay: 1,
-                        category: "Inne"),
-                Expense(id: "2", name: "big", amount: 500, frequency: .monthly, dueDay: 1,
-                        category: "Podatki"),
+                Expense(
+                    id: "1", name: "small", amount: 50, frequency: .monthly, dueDay: 1,
+                    category: "Inne"),
+                Expense(
+                    id: "2", name: "big", amount: 500, frequency: .monthly, dueDay: 1,
+                    category: "Podatki"),
             ],
             today: today)
 
@@ -254,8 +260,10 @@ struct DueReminderTests {
     func leadTime() {
         // Monthly warns 5 days out, yearly 14.
         let dashboard = DashboardBuilder.build(
-            expenses: [expense("m", day: 25),
-                       expense("y", day: 25, frequency: .yearly, month: 12)],
+            expenses: [
+                expense("m", day: 25),
+                expense("y", day: 25, frequency: .yearly, month: 12),
+            ],
             today: today)
         let byID = Dictionary(
             uniqueKeysWithValues: dashboard.dueReminders(after: today, limit: 10)
@@ -277,9 +285,11 @@ struct DueReminderTests {
     @Test("Paid and inactive bills raise nothing")
     func excluded() {
         let dashboard = DashboardBuilder.build(
-            expenses: [expense("open", day: 25),
-                       expense("paid", day: 26, paidPeriod: "2026-09"),
-                       expense("off", day: 27, active: false)],
+            expenses: [
+                expense("open", day: 25),
+                expense("paid", day: 26, paidPeriod: "2026-09"),
+                expense("off", day: 27, active: false),
+            ],
             today: today)
         #expect(dashboard.dueReminders(after: today, limit: 10).map(\.expenseID) == ["open"])
     }

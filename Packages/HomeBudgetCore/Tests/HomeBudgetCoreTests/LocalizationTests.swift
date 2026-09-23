@@ -37,10 +37,16 @@ struct LocalizationTests {
 
     @Test("Notification wording, including singular forms")
     func notificationMessages() {
-        #expect(Localization.notificationMessage(status: .overdue, daysLeft: -3, language: .pl) == "Po terminie o 3 dni")
-        #expect(Localization.notificationMessage(status: .overdue, daysLeft: -1, language: .pl) == "Po terminie o 1 dzień")
-        #expect(Localization.notificationMessage(status: .dueSoon, daysLeft: 5, language: .en) == "Due in 5 days")
-        #expect(Localization.notificationMessage(status: .dueSoon, daysLeft: 1, language: .en) == "Due in 1 day")
+        #expect(
+            Localization.notificationMessage(status: .overdue, daysLeft: -3, language: .pl)
+                == "Po terminie o 3 dni")
+        #expect(
+            Localization.notificationMessage(status: .overdue, daysLeft: -1, language: .pl)
+                == "Po terminie o 1 dzień")
+        #expect(
+            Localization.notificationMessage(status: .dueSoon, daysLeft: 5, language: .en) == "Due in 5 days")
+        #expect(
+            Localization.notificationMessage(status: .dueSoon, daysLeft: 1, language: .en) == "Due in 1 day")
     }
 
     @Test("Polish alert counts use all three plural forms")

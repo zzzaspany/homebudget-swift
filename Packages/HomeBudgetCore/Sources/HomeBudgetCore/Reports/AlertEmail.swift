@@ -15,13 +15,16 @@ public enum AlertEmail {
         language: Language
     ) -> String {
         let heading = language == .pl ? "Alerty płatności" : "Payment alerts"
-        let intro = language == .pl
+        let intro =
+            language == .pl
             ? "Poniżej opłaty wymagające uwagi:"
             : "The following bills need attention:"
-        let columns = language == .pl
+        let columns =
+            language == .pl
             ? ["Wydatek", "Kwota", "Status", "Termin"]
             : ["Expense", "Amount", "Status", "Due"]
-        let footer = language == .pl
+        let footer =
+            language == .pl
             ? "Wiadomość wygenerowana automatycznie przez HomeBudget."
             : "Generated automatically by HomeBudget."
 

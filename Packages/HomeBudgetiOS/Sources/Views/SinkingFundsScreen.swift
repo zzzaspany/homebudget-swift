@@ -17,10 +17,12 @@ struct SinkingFundsScreen: View {
                     Text(UIString.kpiSinkingFund(language))
                         .font(.body.weight(.medium))
                     Spacer()
-                    Text(NumberFormatting.currency(
-                        dashboard.kpis.sinkingFundTotal, language: language))
-                        .font(.body.weight(.semibold))
-                        .monospacedDigit()
+                    Text(
+                        NumberFormatting.currency(
+                            dashboard.kpis.sinkingFundTotal, language: language)
+                    )
+                    .font(.body.weight(.semibold))
+                    .monospacedDigit()
                 }
             }
 
@@ -36,10 +38,12 @@ struct SinkingFundsScreen: View {
                             HStack {
                                 Text(item.name).font(.body.weight(.medium))
                                 Spacer()
-                                Text(NumberFormatting.currency(
-                                    item.monthlyReserve, language: language))
-                                    .font(.callout.weight(.semibold))
-                                    .monospacedDigit()
+                                Text(
+                                    NumberFormatting.currency(
+                                        item.monthlyReserve, language: language)
+                                )
+                                .font(.callout.weight(.semibold))
+                                .monospacedDigit()
                             }
                             HStack(spacing: 6) {
                                 Text(item.frequency.label(language: language))
