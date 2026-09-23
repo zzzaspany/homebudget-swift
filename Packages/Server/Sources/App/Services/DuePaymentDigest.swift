@@ -25,18 +25,30 @@ enum DuePaymentDigest {
 
         guard !due.isEmpty else { return 0 }
 
-        // An overdue bill is worth a noise on the phone; a bill due in four days is not.
-        let hasOverdue = due.contains { ($0.daysLeft ?? 0) < 0 }
-
+        let urgency = urgency(for: due)
         try await NtfyClient(configuration: configuration, client: client, logger: logger)
             .send(
                 title: DueDigest.title(count: due.count, language: language),
                 message: DueDigest.body(due, language: language),
-                priority: hasOverdue ? 5 : 3,
-                tags: hasOverdue ? ["rotating_light", "moneybag"] : ["moneybag"]
+                priority: urgency.priority,
+                tags: urgency.tags
             )
 
         return due.count
+    }
+
+    struct Urgency: Equatable {
+        let priority: Int
+        let tags: [String]
+    }
+
+    /// How loudly to ring. An overdue bill is worth waking the phone for; one due on Friday is
+    /// not, and a digest that always arrives at maximum priority is one that gets muted.
+    static func urgency(for items: [Dashboard.ExpenseSummary]) -> Urgency {
+        let hasOverdue = items.contains { ($0.daysLeft ?? 0) < 0 }
+        return hasOverdue
+            ? Urgency(priority: 5, tags: ["rotating_light", "moneybag"])
+            : Urgency(priority: 3, tags: ["moneybag"])
     }
 }
 
