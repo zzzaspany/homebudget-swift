@@ -1,6 +1,9 @@
 # HomeBudget — everything you need to build, test, run and ship the app.
 # Run `make` on its own for the list.
 
+# Recipes below use `set -o pipefail`, which /bin/sh does not have.
+SHELL := /bin/bash
+
 # --- Environment -------------------------------------------------------------
 #
 # Builds keep their scratch directory on local disk. The repository lives on an SMB share where
@@ -87,10 +90,28 @@ ios: ## Generate the Xcode project from project.yml
 ios-open: ios ## Generate and open in Xcode
 	open $(IOS_DIR)/HomeBudget.xcodeproj
 
-ios-build: ios ## Build the app for the simulator
-	cd $(IOS_DIR) && xcodebuild -project HomeBudget.xcodeproj -scheme HomeBudget \
+# Two ways to build the app, deliberately.
+#
+# `ios-build` is byte-for-byte what CI runs: plain xcodebuild, no pipe. Use it when reproducing a
+# CI failure, and keep it that way — a pipe would be one more difference between here and there.
+#
+# `ios-pretty` is the same build through xcbeautify, which turns ~2000 lines of compiler
+# invocations into a readable summary. For working, not for diagnosing CI.
+#
+# `set -o pipefail` in the pretty target is load-bearing: a pipe reports the *last* command's exit
+# status, so without it a failed build would look like a successful one. This is the mistake
+# fastlane users hit; it is a shell default, not an xcbeautify bug.
+XCODEBUILD_IOS = xcodebuild -project HomeBudget.xcodeproj -scheme HomeBudget \
 		-destination 'platform=iOS Simulator,name=$(IOS_SIMULATOR)' \
 		-derivedDataPath $(SCRATCH)/ios build
+
+ios-build: ios ## Build the app for the simulator (raw output, exactly as CI runs it)
+	cd $(IOS_DIR) && $(XCODEBUILD_IOS)
+
+ios-pretty: ios ## Build the app with readable output (needs: brew install xcbeautify)
+	@command -v xcbeautify >/dev/null 2>&1 \
+		|| { echo "xcbeautify not installed: brew install xcbeautify"; exit 1; }
+	@cd $(IOS_DIR) && set -o pipefail && $(XCODEBUILD_IOS) | xcbeautify
 
 ios-run: ios-build ## Build, install and launch on the simulator
 	@xcrun simctl boot "$(IOS_SIMULATOR)" 2>/dev/null || true
