@@ -13,7 +13,13 @@ updates:
           - "minor"
           - "patch"
   - package-ecosystem: "swift"
-    directory: "/"
+    # The repository root holds no Package.swift - the packages live under Packages/ - so
+    # `directory: "/"` failed every week with "No files found in /" and Swift dependencies were
+    # never checked at all. Only these two have external dependencies; HomeBudgetCore has none,
+    # and HomeBudgetiOS is an Xcode project, not a SwiftPM package.
+    directories:
+      - "/Packages/Server"
+      - "/Packages/WebClient"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
