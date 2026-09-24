@@ -95,6 +95,15 @@ jobs:
         with:
           languages: swift
           build-mode: autobuild
+          # autobuild resolves the package graph, so SwiftPM's checkouts of Vapor, postgres-nio
+          # and swift-certificates end up on disk and get analysed as if they were ours. Every
+          # high-severity Swift alert so far has come from there - MD5 in postgres-nio is the
+          # Postgres wire protocol, SHA-1 in swift-certificates is legacy certificate support.
+          # Neither is something this repository can change, and dependency vulnerabilities are
+          # Dependabot's job, not CodeQL's.
+          config: |
+            paths-ignore:
+              - '**/.build/**'
 
       - uses: github/codeql-action/analyze@v4
         with:
