@@ -54,6 +54,15 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates tzdata libcurl4 libxml2 \
     && rm -rf /var/lib/apt/lists/*
 
+# Every service this app talks to inside the lab - Postgres, ntfy - is served from a certificate
+# signed by OfficeLab Root CA 2026, which no public trust store knows. postgres-kit enforces full
+# certificate verification on any TLS connection regardless of the sslmode requested, so without
+# this the only way to reach Postgres is with TLS switched off entirely. The file is a root
+# certificate and nothing else: public material, no private key. Replace it when the root is
+# rotated - the root has ten years on it, unlike the 397-day leaf it signs.
+COPY deploy/officelab-root-ca.crt /usr/local/share/ca-certificates/officelab-root-ca-2026.crt
+RUN update-ca-certificates
+
 # The app writes only to its uploads volume, so it need not run as root.
 RUN useradd --user-group --create-home --home-dir /app homebudget
 WORKDIR /app
