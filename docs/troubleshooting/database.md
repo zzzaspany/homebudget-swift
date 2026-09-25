@@ -56,7 +56,7 @@ here.
 So two things have to be true before `sslmode=require` works, and neither is about the client:
 
 1. The server's certificate is valid for **the hostname in `DATABASE_URL`**. A certificate for
-   `postgres.example.com` will not do when the URL says `postgres.office.lab`, and Debian's default
+   `postgres.example.com` will not do when the URL says `postgres.example.lab`, and Debian's default
    `ssl-cert-snakeoil.pem` is valid for neither.
 2. Its issuer is a root this image trusts. The image carries `OfficeLab Root CA 2026`; a public
    trust store alone will reject anything the lab issues.
@@ -64,8 +64,8 @@ So two things have to be true before `sslmode=require` works, and neither is abo
 To check the server's side without involving the app:
 
 ```bash
-openssl s_client -starttls postgres -connect postgres.office.lab:5432 \
-  -servername postgres.office.lab -verify_hostname postgres.office.lab </dev/null
+openssl s_client -starttls postgres -connect postgres.example.lab:5432 \
+  -servername postgres.example.lab -verify_hostname postgres.example.lab </dev/null
 ```
 
 `Verify return code: 0 (ok)` means the certificate is the problem's other half. To see whether a

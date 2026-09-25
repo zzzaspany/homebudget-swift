@@ -1,6 +1,6 @@
 # Calling the API from a machine
 
-Everything on `office.lab` sits behind Authelia, which is a sign-in page. That is right for a
+Everything on `example.lab` sits behind Authelia, which is a sign-in page. That is right for a
 browser and useless for a shortcut, an automation or a cron job: there is nobody to type a password.
 An **API token** is the way in for those, and it is deliberately the weaker way in — a request
 carrying one may only read.
@@ -33,13 +33,13 @@ Read-only API tokens accepted for: shortcuts, n8n
 Either header works. Bearer is the conventional one:
 
 ```bash
-curl -H "Authorization: Bearer $TOKEN" https://rachunki.office.lab/api/expenses
+curl -H "Authorization: Bearer $TOKEN" https://rachunki.example.lab/api/expenses
 ```
 
 `X-API-Key` exists because several automation tools only offer that shape:
 
 ```bash
-curl -H "X-API-Key: $TOKEN" https://rachunki.office.lab/api/expenses
+curl -H "X-API-Key: $TOKEN" https://rachunki.example.lab/api/expenses
 ```
 
 ## What a token can reach
@@ -72,11 +72,11 @@ Read this before treating a token as a security boundary.
 The identity headers (`Remote-User` and friends) are trusted because Authelia sets them, and the app
 has no way to tell a header set by the proxy from one set by anybody else. That is safe only while
 the app is unreachable except through the proxy — and **it is not**. The container publishes port
-8000 on the lab network, so any host on `192.168.0.0/24` can do this:
+8000 on the lab network, so any host on `192.0.2.0/24` can do this:
 
 ```bash
-curl -H "Remote-User: konrad" http://192.168.0.182:8000/api/expenses     # full read
-curl -X DELETE -H "Remote-User: konrad" http://192.168.0.182:8000/api/expenses/<id>
+curl -H "Remote-User: konrad" http://192.0.2.10:8000/api/expenses     # full read
+curl -X DELETE -H "Remote-User: konrad" http://192.0.2.10:8000/api/expenses/<id>
 ```
 
 That is full read *and write* access without any token, and it predates this feature — the token is

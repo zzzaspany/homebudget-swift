@@ -1,13 +1,13 @@
 # The internal CA and TLS on Apple devices
 
-Everything on `*.office.lab` is served by Nginx Proxy Manager with one wildcard certificate issued
+Everything on `*.example.lab` is served by Nginx Proxy Manager with one wildcard certificate issued
 by a private root, "OfficeLab Root CA". macOS accepts it once the root is in the keychain. iOS does
 not, and the reason is not obvious.
 
 ## iOS refuses the wildcard certificate even with the root CA installed and fully trusted
 
 **Symptom.** On an iPhone, an iPad, or the simulator: Safari shows "This Connection Is Not Private —
-This website may be impersonating rachunki.office.lab". In the app, `WKWebView` fails navigation
+This website may be impersonating rachunki.example.lab". In the app, `WKWebView` fails navigation
 with `NSURLErrorServerCertificateUntrusted`. The OfficeLab root is installed as a configuration
 profile *and* switched on under Settings → General → About → Certificate Trust Settings. macOS on
 the same network loads the site without complaint.
@@ -37,7 +37,7 @@ had the root been missing or untrusted, the failure would name an anchor problem
 The root CA itself is not subject to the limit and can keep its ten years. Confirm before and after:
 
 ```bash
-echo | openssl s_client -connect rachunki.office.lab:443 -servername rachunki.office.lab 2>/dev/null \
+echo | openssl s_client -connect rachunki.example.lab:443 -servername rachunki.example.lab 2>/dev/null \
   | openssl x509 -noout -dates
 ```
 
@@ -62,9 +62,9 @@ the yearly reissue script are in `office-proxmox-server` (`08-officelab-ca.md`);
 them here.
 
 **Deployed since 2026-09-08.** Nginx Proxy Manager serves the 397-day leaf issued from
-`OfficeLab Root CA 2026`; confirmed against `rachunki.office.lab`, `notAfter=Oct 10 13:42:18 2027`.
+`OfficeLab Root CA 2026`; confirmed against `rachunki.example.lab`, `notAfter=Oct 10 13:42:18 2027`.
 This paragraph said "not deployed yet" until 2026-09-25, which is the sort of sentence that outlives
-its truth quietly. Anything that validates `office.lab` TLS needs the new root — the runbook lists
+its truth quietly. Anything that validates `example.lab` TLS needs the new root — the runbook lists
 where, and this image is one of them, below.
 
 ## The server image carries the root CA
@@ -82,7 +82,7 @@ Not cosmetic. **`postgres-kit` enforces full certificate verification — chain 
 without this root in the image the only way to reach Postgres is with TLS switched off entirely,
 which is how this deployment ran until 2026-09-25: `pg_stat_ssl` reported `ssl=f`.
 
-The same root covers ntfy, reached at an `office.lab` name behind the same proxy.
+The same root covers ntfy, reached at an `example.lab` name behind the same proxy.
 
 When the root is rotated — it has ten years on it, unlike the 397-day leaf it signs — replace
 `deploy/officelab-root-ca.crt` and rebuild. The leaf is not baked in anywhere and needs no rebuild.

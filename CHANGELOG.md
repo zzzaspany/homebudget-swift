@@ -85,7 +85,7 @@ Both are bug fixes agreed before the rewrite began. Figures will not match the o
 
 ### Infrastructure
 
-- The `office.lab` wildcard certificate was reissued for 397 days under a new root
+- The `example.lab` wildcard certificate was reissued for 397 days under a new root
   (`OfficeLab Root CA 2026`). iOS rejects any TLS certificate valid for more than 398 days, even
   from a user-installed root, so the previous ten-year certificate made the app unusable on a phone.
   Recorded in `office-proxmox-server/08-officelab-ca.md`.
