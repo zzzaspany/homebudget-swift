@@ -2,7 +2,7 @@ import Vapor
 
 /// A named credential that lets a machine read the API without a browser session.
 ///
-/// Everything on `office.lab` sits behind Authelia, which is a sign-in page — fine for a person,
+/// Everything on `example.lab` sits behind Authelia, which is a sign-in page — fine for a person,
 /// useless for a shortcut, an automation or a script. A token is the way in for those, and it is
 /// deliberately the *weaker* way in: a request carrying one may only read.
 struct APIToken: Sendable {

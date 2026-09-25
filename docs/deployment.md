@@ -152,7 +152,7 @@ NTFY_PASSWORD=<the ntfy publisher password, already in the ntfy-prd environment>
 ```
 
 `host.containers.internal` rather than an address: from inside a rootless container `127.0.0.1` is
-the container itself, and the host's own LAN address (`192.168.0.182:8095`) is **not** reachable —
+the container itself, and the host's own LAN address (`192.0.2.10:8095`) is **not** reachable —
 verified, it times out. `host.containers.internal` resolves and answers.
 
 Going straight to the container also keeps Cloudflare out of the path, which matters: the tunnel in

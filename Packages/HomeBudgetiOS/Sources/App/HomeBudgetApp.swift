@@ -19,7 +19,7 @@ struct ServerSettings {
     var baseURL: URL
 
     private static let key = "serverURL"
-    private static let fallback = URL(string: "https://rachunki.office.lab")!
+    private static let fallback = URL(string: "https://rachunki.example.lab")!
 
     static func load() -> ServerSettings {
         let stored = UserDefaults.standard.string(forKey: key).flatMap(URL.init(string:))

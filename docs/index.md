@@ -33,8 +33,11 @@ it and the reason it was not what it looked like. A few that cost the most time:
 - [The WebAssembly client](troubleshooting/swift-wasm.md) — the toolchain coupling that breaks the
   image build when only one version moves.
 
-!!! note "This documents one particular installation"
+!!! note "Hostnames and addresses here are placeholders"
 
-    The examples name real hosts on a private network — `postgres.office.lab`, addresses in
-    `192.168.0.0/24`. They are here because a runbook with the names filed off is a runbook nobody
-    can follow. None of it is reachable from the internet.
+    Everything names `example.lab` and addresses in `192.0.2.0/24` — the range RFC 5737 reserves for
+    documentation, so none of it is anybody's infrastructure. Substitute your own and the commands
+    work unchanged; the shape of each example is the real one.
+
+    The iOS client's compiled-in default server is a placeholder for the same reason, so a fresh
+    install needs the address entered under **More → Server** before it can reach anything.

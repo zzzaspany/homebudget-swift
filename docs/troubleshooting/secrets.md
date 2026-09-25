@@ -47,6 +47,6 @@ until 2026-09-17 — it needs revoking. Prefer a scoped machine identity over a 
 anything an agent will use.
 
 **Infisical serves a stale frontend after an upgrade.** The symptom is a white page at
-`https://vault.office.lab` with no error. The cause is the runit-supervised process continuing to
+`https://vault.example.lab` with no error. The cause is the runit-supervised process continuing to
 serve a frontend it loaded into memory before the upgrade; a restart of the service fixes it. That
 belongs in `office-podman-services`, not here.
