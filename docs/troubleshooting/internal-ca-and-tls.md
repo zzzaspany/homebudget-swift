@@ -61,9 +61,34 @@ wildcard issued from it. Both live in Infisical under Proxmox Services / `npm-pr
 the yearly reissue script are in `office-proxmox-server` (`08-officelab-ca.md`); do not duplicate
 them here.
 
-**Not deployed yet.** Nginx Proxy Manager still serves the old certificate, so the iOS app still
-cannot sign in. Going live means distributing the new root to every device and container that
-validates office.lab TLS — the runbook lists them.
+**Deployed since 2026-09-08.** Nginx Proxy Manager serves the 397-day leaf issued from
+`OfficeLab Root CA 2026`; confirmed against `rachunki.office.lab`, `notAfter=Oct 10 13:42:18 2027`.
+This paragraph said "not deployed yet" until 2026-09-25, which is the sort of sentence that outlives
+its truth quietly. Anything that validates `office.lab` TLS needs the new root — the runbook lists
+where, and this image is one of them, below.
+
+## The server image carries the root CA
+
+The runtime image installs `OfficeLab Root CA 2026` into its own trust store:
+
+```dockerfile
+COPY deploy/officelab-root-ca.crt /usr/local/share/ca-certificates/officelab-root-ca-2026.crt
+RUN update-ca-certificates
+```
+
+Not cosmetic. **`postgres-kit` enforces full certificate verification — chain of trust and hostname
+— on any TLS connection it makes, whatever `sslmode` asks for.** `require`, `verify-ca` and
+`verify-full` are aliases for one another, and there is no encrypt-without-verifying setting. So
+without this root in the image the only way to reach Postgres is with TLS switched off entirely,
+which is how this deployment ran until 2026-09-25: `pg_stat_ssl` reported `ssl=f`.
+
+The same root covers ntfy, reached at an `office.lab` name behind the same proxy.
+
+When the root is rotated — it has ten years on it, unlike the 397-day leaf it signs — replace
+`deploy/officelab-root-ca.crt` and rebuild. The leaf is not baked in anywhere and needs no rebuild.
+
+Symptoms of getting this wrong, and what to do about them, are in
+[database.md](database.md#certificate_verify_failed-after-changing-sslmode).
 
 ## Diagnosing "is it the certificate or the trust store"
 
