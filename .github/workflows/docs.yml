@@ -1,0 +1,66 @@
+name: Documentation site
+
+# Only when the documentation or its configuration changes. The Build and CodeQL workflows already
+# run on everything; this one has nothing to say about a change to Swift.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # A deploy in progress should finish rather than be cancelled halfway, so only the pending run is
+  # replaced.
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      # Pinned: a docs site that rebuilds differently on a Tuesday is worse than one that is a
+      # version behind.
+      - run: pip install 'mkdocs-material==9.7.7'
+
+      # --strict turns a broken internal link into a failed build. It has already earned that:
+      # a link out of the docs tree worked in GitHub's file view and would have 404'd on the site.
+      - run: mkdocs build --strict
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    name: Deploy
+    needs: build
+    # Pull requests build but do not publish, so a fork cannot deploy to the site.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

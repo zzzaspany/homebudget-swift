@@ -127,6 +127,11 @@ app can reuse it.
 
 ## Documentation
 
+Published at **<https://zzzaspany.github.io/homebudget-swift/>** — the same Markdown under `docs/`,
+built with MkDocs Material so the troubleshooting log is searchable rather than something you grep.
+It rebuilds on any change to `docs/`, and the build is `--strict`: a broken internal link fails it
+rather than shipping a 404.
+
 The domain module carries a DocC reference — Apple's own documentation compiler, which reads the
 doc comments and the catalog under
 `Packages/HomeBudgetCore/Sources/HomeBudgetCore/HomeBudgetCore.docc` and produces a browsable
