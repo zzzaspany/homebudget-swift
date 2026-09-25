@@ -1,0 +1,59 @@
+site_name: HomeBudget (Swift)
+site_description: A household budget application in Swift — Vapor on the server, WebAssembly in the browser, native on iOS.
+site_url: https://zzzaspany.github.io/homebudget-swift/
+repo_url: https://github.com/zzzaspany/homebudget-swift
+repo_name: zzzaspany/homebudget-swift
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    # Follows the reader's own setting rather than picking for them.
+    - media: "(prefers-color-scheme)"
+      toggle: {icon: material/brightness-auto, name: Follow system}
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle: {icon: material/brightness-7, name: Dark mode}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle: {icon: material/brightness-4, name: Light mode}
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.action.edit
+    - search.suggest
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc: {permalink: true}
+  # The troubleshooting pages are mostly shell and Swift; keep them readable and copyable.
+  - pymdownx.highlight: {anchor_linenums: true}
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.details
+
+plugins:
+  - search
+
+# Explicit rather than inferred, so a new file has to be placed deliberately and the troubleshooting
+# index is not mistaken for a page about the word "README".
+nav:
+  - Home: index.md
+  - Deployment: deployment.md
+  - Continuous integration: ci.md
+  - API: api.md
+  - Roadmap: roadmap.md
+  - Troubleshooting:
+      - Overview: troubleshooting/README.md
+      - Building and toolchains: troubleshooting/build-and-toolchains.md
+      - Containers and deployment: troubleshooting/containers-and-deployment.md
+      - PostgreSQL: troubleshooting/database.md
+      - The internal CA and TLS: troubleshooting/internal-ca-and-tls.md
+      - Secrets: troubleshooting/secrets.md
+      - Reminders and Calendar: troubleshooting/eventkit.md
+      - The WebAssembly client: troubleshooting/swift-wasm.md
+      - iOS simulator: troubleshooting/ios-simulator.md
+      - Interface: troubleshooting/ui.md

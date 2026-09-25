@@ -1,6 +1,6 @@
 # Secrets
 
-This repository is public. The rules are in [AGENTS.md](../../AGENTS.md); this file is what went
+This repository is public. The rules are in [AGENTS.md](https://github.com/zzzaspany/homebudget-swift/blob/main/AGENTS.md); this file is what went
 wrong.
 
 ## A password was echoed into the terminal
