@@ -38,3 +38,42 @@ exactly, apart from the two documented corrections.
 
 It speaks raw TCP. Give it a hostname resolving straight to it — an HTTP proxy in front has nothing
 to contribute and only adds a failure mode.
+
+## `CERTIFICATE_VERIFY_FAILED` after changing `sslmode`
+
+```text
+PSQLError(code: connectionError, underlying: NIOSSL.NIOSSLError.handshakeFailed(
+  BoringSSLError.sslError([Error: ... CERTIFICATE_VERIFY_FAILED ...])))
+```
+
+`postgres-kit` does not implement `libpq`'s modes. Whenever it makes a TLS connection it enforces
+**full certificate verification — chain of trust and hostname — regardless of the mode asked for**.
+`require`, `verify-ca` and `verify-full` are aliases for one another, and `prefer` differs only in
+falling back to plaintext when the server offers no TLS at all. There is no encrypt-without-
+verifying setting, which is what `require` means in `libpq` and what most people expect it to mean
+here.
+
+So two things have to be true before `sslmode=require` works, and neither is about the client:
+
+1. The server's certificate is valid for **the hostname in `DATABASE_URL`**. A certificate for
+   `postgres.example.com` will not do when the URL says `postgres.office.lab`, and Debian's default
+   `ssl-cert-snakeoil.pem` is valid for neither.
+2. Its issuer is a root this image trusts. The image carries `OfficeLab Root CA 2026`; a public
+   trust store alone will reject anything the lab issues.
+
+To check the server's side without involving the app:
+
+```bash
+openssl s_client -starttls postgres -connect postgres.office.lab:5432 \
+  -servername postgres.office.lab -verify_hostname postgres.office.lab </dev/null
+```
+
+`Verify return code: 0 (ok)` means the certificate is the problem's other half. To see whether a
+connection is actually encrypted rather than assuming it, ask the server:
+
+```sql
+SELECT d.datname, a.client_addr, s.ssl
+FROM pg_stat_ssl s JOIN pg_stat_activity a USING (pid)
+LEFT JOIN pg_database d ON d.oid = a.datid
+WHERE a.client_addr IS NOT NULL;
+```
