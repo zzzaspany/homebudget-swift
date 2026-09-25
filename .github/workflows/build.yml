@@ -13,6 +13,13 @@ env:
   REGISTRY: ghcr.io
   IMAGE: ${{ github.repository }}
 
+# The repository's default workflow permission is already read-only, so this changes nothing at
+# run time - it states it. Without it every job inherits an unstated default that a repository
+# setting could widen later, which is what CodeQL's actions/missing-workflow-permissions flags.
+# The image job needs more and declares its own; job-level blocks replace this one entirely.
+permissions:
+  contents: read
+
 jobs:
   # This repository is public, so a secret that reaches a commit is a secret that is gone. Cheaper
   # to fail a pull request than to rotate a credential and rewrite history afterwards.
