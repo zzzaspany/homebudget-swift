@@ -344,20 +344,25 @@ struct DashboardView {
         let head = DOM.element("tr").appending(
             ([
                 .columnName, .columnCategory, .columnPeriod, .columnAmount, .columnDatePaid, .columnPaidBy,
-                .columnInvoice,
+                .columnInvoice, .columnActions,
             ] as [UIString])
             .map { DOM.element("th", text: $0(language)) }
         )
 
         let rows = state.payments.prefix(25).map { payment in
-            DOM.element("tr").appending(
+            let editButton = DOM.element("button", class: "icon-button", text: "✎")
+            editButton.attribute("title", UIString.editPaymentTitle(language))
+            editButton.on("click") { openPaymentEditor(payment) }
+
+            return DOM.element("tr").appending(
                 DOM.element("td", text: payment.expenseName),
                 DOM.element("td", text: Localization.category(payment.category, language: language)),
                 DOM.element("td", text: Localization.periodLabel(payment.period, language: language)),
                 DOM.element("td", class: "amount", text: money(payment.amountPaid)),
                 DOM.element("td", text: Localization.dateLabel(payment.datePaid, language: language)),
                 DOM.element("td", text: payment.paidBy),
-                DOM.element("td").appending(invoiceLink(payment))
+                DOM.element("td").appending(invoiceLink(payment)),
+                DOM.element("td", class: "actions").appending(editButton)
             )
         }
 

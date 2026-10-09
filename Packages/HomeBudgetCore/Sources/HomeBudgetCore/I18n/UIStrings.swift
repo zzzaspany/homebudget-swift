@@ -64,6 +64,9 @@ public enum UIString: String, CaseIterable, Sendable {
 
     case addExpenseTitle
     case editExpenseTitle
+    case editPaymentTitle
+    case paymentDateInFuture
+    case paymentInvalid
     case fieldDueDay
     case fieldDueMonth
     case fieldActive
@@ -192,6 +195,9 @@ public enum UIString: String, CaseIterable, Sendable {
 
         .addExpenseTitle: "Nowy wydatek",
         .editExpenseTitle: "Edytuj wydatek",
+        .editPaymentTitle: "Edytuj wpłatę",
+        .paymentDateInFuture: "Data wpłaty nie może być z przyszłości",
+        .paymentInvalid: "Podaj poprawną datę i kwotę większą od zera",
         .fieldDueDay: "Dzień miesiąca",
         .fieldDueMonth: "Miesiąc",
         .fieldActive: "Aktywny",
@@ -310,6 +316,9 @@ public enum UIString: String, CaseIterable, Sendable {
 
         .addExpenseTitle: "New expense",
         .editExpenseTitle: "Edit expense",
+        .editPaymentTitle: "Edit payment",
+        .paymentDateInFuture: "A payment date cannot be in the future",
+        .paymentInvalid: "Enter a valid date and an amount above zero",
         .fieldDueDay: "Day of month",
         .fieldDueMonth: "Month",
         .fieldActive: "Active",

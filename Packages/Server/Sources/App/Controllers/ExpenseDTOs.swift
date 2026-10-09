@@ -55,4 +55,16 @@ struct PayExpenseRequest: Content {
     }
 }
 
+/// Date as `YYYY-MM-DD` rather than the `{year, month, day}` object responses carry: it is what an
+/// HTML date input hands over, and the server validates it either way.
+struct UpdatePaymentRequest: Content {
+    let amountPaid: Double?
+    let datePaid: String?
+
+    enum CodingKeys: String, CodingKey {
+        case amountPaid = "amount_paid"
+        case datePaid = "date_paid"
+    }
+}
+
 extension PaymentRecord: @retroactive Content {}
