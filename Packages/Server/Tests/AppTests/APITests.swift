@@ -226,7 +226,8 @@ struct APITests {
             try await app.testing().test(
                 .PUT, "/api/payments/\(UUID())", headers: APITestSupport.headers(user: "konrad"),
                 beforeRequest: { request in
-                    request.body = ByteBuffer(data: try JSONSerialization.data(withJSONObject: ["amount_paid": 5]))
+                    request.body = ByteBuffer(
+                        data: try JSONSerialization.data(withJSONObject: ["amount_paid": 5]))
                 }
             ) { response in #expect(response.status == .notFound) }
         }
