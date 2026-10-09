@@ -76,8 +76,18 @@ extension DashboardView {
         let amountField = field(type: "number", value: NumberFormatting.plain(payment.amountPaid))
         amountField.attribute("step", "0.01")
         amountField.attribute("min", "0.01")
-        let dateField = field(type: "date", value: payment.datePaid.iso8601)
-        dateField.attribute("max", today.iso8601)
+        // Plain text rather than `type="date"`: the browser draws a date input in the order of its
+        // own language, so an English browser shows MM/DD/YYYY however the page is set up.
+        let dateField = field(type: "text", value: payment.datePaid.dayMonthYear)
+        dateField.attribute("placeholder", UIString.datePlaceholder(language))
+        dateField.attribute("inputmode", "numeric")
+        dateField.attribute("autocomplete", "off")
+        dateField.attribute("maxlength", "10")
+        dateField.on("blur") {
+            if let date = CalendarDate(dayMonthYear: dateField.value.string ?? "") {
+                dateField.value = .string(date.dayMonthYear)
+            }
+        }
 
         let body = DOM.element("div", class: "form").appending(
             labelled(UIString.columnDatePaid(language), dateField),
@@ -90,7 +100,7 @@ extension DashboardView {
         let save = DOM.element("button", class: "button primary", text: UIString.actionSave(language))
         save.on("click") {
             guard let amount = Double(amountField.value.string ?? ""), amount > 0,
-                let date = CalendarDate(iso8601: dateField.value.string ?? "")
+                let date = CalendarDate(dayMonthYear: dateField.value.string ?? "")
             else {
                 Toast.show(UIString.paymentInvalid(language), kind: .failure)
                 return

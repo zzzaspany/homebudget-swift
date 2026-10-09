@@ -19,7 +19,9 @@ updating before the container will start.
   payment history (`PUT /api/payments/:id`). A payment is always stamped with the day it was entered,
   so one entered late carried the wrong date with no way to fix it short of editing the database.
   The period it settles is deliberately left alone: moving it would quietly change which bills
-  count as paid. A future date is refused. Additive; existing clients are unaffected.
+  count as paid. A future date is refused. The date is typed as `DD-MM-YYYY` rather than picked from the browser's
+  date input, which shows the browser's own order (MM/DD/YYYY in an English browser) whatever the
+  page asks for. Additive; existing clients are unaffected.
 - **Read-only API tokens** (`API_TOKENS`), so a shortcut, an automation or a script can read the
   budget without an Authelia sign-in page it cannot use. A token may only `GET`; every write is
   refused with 403, enforced in the middleware so an endpoint added later is closed by default. See
