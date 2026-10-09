@@ -80,4 +80,20 @@ struct CalendarDateTests {
         let date = CalendarDate(year: 2026, month: 1, day: 9)
         #expect(CalendarDate(iso8601: date.iso8601) == date)
     }
+
+    @Test("Writes and reads day-first dates the way they are typed")
+    func dayMonthYear() {
+        let date = CalendarDate(year: 2026, month: 10, day: 3)
+        #expect(date.dayMonthYear == "03-10-2026")
+        for text in ["03-10-2026", "3-10-2026", "03.10.2026", "3/10/2026", "03102026", " 03-10-2026 "] {
+            #expect(CalendarDate(dayMonthYear: text) == date, "\(text)")
+        }
+        #expect(CalendarDate(dayMonthYear: "29-02-2024") == CalendarDate(year: 2024, month: 2, day: 29))
+        for text in [
+            "29-02-2026", "31-04-2026", "03-13-2026", "2026-10-03", "03-10-26", "3102026", "", "aa-bb-cccc",
+        ] {
+            #expect(CalendarDate(dayMonthYear: text) == nil, "\(text)")
+        }
+        #expect(CalendarDate(dayMonthYear: date.dayMonthYear) == date)
+    }
 }

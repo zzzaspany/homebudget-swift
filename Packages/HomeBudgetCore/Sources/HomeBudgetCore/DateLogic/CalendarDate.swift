@@ -87,6 +87,31 @@ public struct CalendarDate: Codable, Hashable, Comparable, Sendable {
         self.init(year: year, month: month, day: day)
     }
 
+    /// `DD-MM-YYYY`, the order a Polish reader expects — unlike a browser's date input, whose format
+    /// follows the browser's language rather than the page's.
+    public var dayMonthYear: String {
+        "\(Self.pad(day))-\(Self.pad(month))-\(year)"
+    }
+
+    /// Reads a day-first date as people actually type it: `3-10-2026`, `03.10.2026`, `3/10/2026`,
+    /// or the bare digits `03102026`. Nil for anything else, and for a day the month does not have.
+    public init?(dayMonthYear text: String) {
+        let trimmed = text.split(separator: " ", omittingEmptySubsequences: true).joined()
+        let parts: [Substring]
+        if trimmed.count == 8, trimmed.allSatisfy(\.isNumber) {
+            let digits = Array(trimmed)
+            parts = [digits[0..<2], digits[2..<4], digits[4..<8]].map { Substring(String($0)) }
+        } else {
+            parts = trimmed.split(omittingEmptySubsequences: false) { $0 == "-" || $0 == "." || $0 == "/" }
+        }
+        guard parts.count == 3, (1...2).contains(parts[0].count), (1...2).contains(parts[1].count),
+            parts[2].count == 4,
+            let day = Int(parts[0]), let month = Int(parts[1]), let year = Int(parts[2]),
+            (1...12).contains(month), (1...Self.daysInMonth(year: year, month: month)).contains(day)
+        else { return nil }
+        self.init(year: year, month: month, day: day)
+    }
+
     /// The current date, read from the platform clock.
     ///
     /// Every calculation takes the date as a parameter instead of reading the clock itself, so this
