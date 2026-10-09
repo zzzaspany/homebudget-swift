@@ -48,6 +48,14 @@ struct APIClient: Sendable {
         try await send("/api/expenses/\(id)", method: "PUT", body: body.jsonObject)
     }
 
+    @discardableResult
+    func updatePayment(id: String, amount: Double, datePaid: CalendarDate) async throws -> PaymentRecord {
+        let body = JSObject.global.Object.function!.new()
+        body["amount_paid"] = .number(amount)
+        body["date_paid"] = .string(datePaid.iso8601)
+        return try await send("/api/payments/\(id)", method: "PUT", body: body)
+    }
+
     struct AlertEmailResult: Decodable, Sendable {
         let success: Bool
         let message: String

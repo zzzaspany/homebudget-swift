@@ -76,6 +76,17 @@ public struct CalendarDate: Codable, Hashable, Comparable, Sendable {
         "\(year)-\(Self.pad(month))-\(Self.pad(day))"
     }
 
+    /// Reads `YYYY-MM-DD`, the shape an HTML date input produces. Nil for anything else, including a
+    /// day the month does not have — a date that has to be clamped was not the date somebody meant.
+    public init?(iso8601 text: String) {
+        let parts = text.split(separator: "-", omittingEmptySubsequences: false)
+        guard parts.count == 3, parts[0].count == 4, parts[1].count == 2, parts[2].count == 2,
+            let year = Int(parts[0]), let month = Int(parts[1]), let day = Int(parts[2]),
+            (1...12).contains(month), (1...Self.daysInMonth(year: year, month: month)).contains(day)
+        else { return nil }
+        self.init(year: year, month: month, day: day)
+    }
+
     /// The current date, read from the platform clock.
     ///
     /// Every calculation takes the date as a parameter instead of reading the clock itself, so this

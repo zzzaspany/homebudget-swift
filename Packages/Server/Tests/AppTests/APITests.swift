@@ -186,6 +186,53 @@ struct APITests {
         }
     }
 
+    @Test("A payment's date and amount can be corrected, and its period stays put")
+    func paymentCanBeCorrected() async throws {
+        try await APITestSupport.withServer { app in
+            let id = try await APITestSupport.createExpense(app, name: "Internet")
+            try await app.testing().test(
+                .POST, "/api/expenses/\(id)/pay", headers: APITestSupport.headers(user: "konrad"),
+                beforeRequest: { request in
+                    request.body = ByteBuffer(
+                        data: try JSONSerialization.data(withJSONObject: ["amount_paid": 100]))
+                }
+            ) { _ in }
+            let before = try #require(try await PaymentModel.query(on: app.db).first())
+            let paymentID = try before.requireID()
+
+            func put(_ body: [String: Any]) async throws -> HTTPStatus {
+                var status = HTTPStatus.internalServerError
+                try await app.testing().test(
+                    .PUT, "/api/payments/\(paymentID)", headers: APITestSupport.headers(user: "konrad"),
+                    beforeRequest: { request in
+                        request.body = ByteBuffer(data: try JSONSerialization.data(withJSONObject: body))
+                    }
+                ) { response in status = response.status }
+                return status
+            }
+
+            #expect(try await put(["date_paid": "2026-01-15", "amount_paid": 89.99]) == .ok)
+            let after = try #require(try await PaymentModel.find(paymentID, on: app.db))
+            #expect(CalendarDate(utc: after.datePaid) == CalendarDate(year: 2026, month: 1, day: 15))
+            #expect(after.amountPaid == 89.99)
+            #expect(after.period == before.period)
+
+            let tomorrow = CalendarDate.today().addingDays(1).iso8601
+            #expect(try await put(["date_paid": tomorrow]) == .badRequest)
+            #expect(try await put(["date_paid": "15.01.2026"]) == .badRequest)
+            #expect(try await put(["amount_paid": 0]) == .badRequest)
+            #expect(try #require(try await PaymentModel.find(paymentID, on: app.db)).amountPaid == 89.99)
+
+            try await app.testing().test(
+                .PUT, "/api/payments/\(UUID())", headers: APITestSupport.headers(user: "konrad"),
+                beforeRequest: { request in
+                    request.body = ByteBuffer(
+                        data: try JSONSerialization.data(withJSONObject: ["amount_paid": 5]))
+                }
+            ) { response in #expect(response.status == .notFound) }
+        }
+    }
+
     @Test("Price history reports the drift between the first and latest payment")
     func priceHistory() async throws {
         try await APITestSupport.withServer { app in

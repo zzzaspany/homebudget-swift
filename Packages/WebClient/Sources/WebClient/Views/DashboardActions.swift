@@ -67,6 +67,56 @@ extension DashboardView {
         )
     }
 
+    /// Corrects a payment already recorded. Payments are always stamped with the day they were
+    /// entered, so one entered late carries the wrong date until somebody fixes it here.
+    func openPaymentEditor(_ payment: PaymentRecord) {
+        let language = state.language
+        let today = CalendarDate.today()
+
+        let amountField = field(type: "number", value: NumberFormatting.plain(payment.amountPaid))
+        amountField.attribute("step", "0.01")
+        amountField.attribute("min", "0.01")
+        let dateField = field(type: "date", value: payment.datePaid.iso8601)
+        dateField.attribute("max", today.iso8601)
+
+        let body = DOM.element("div", class: "form").appending(
+            labelled(UIString.columnDatePaid(language), dateField),
+            labelled(UIString.columnAmount(language), amountField),
+            DOM.element(
+                "p", class: "muted small",
+                text: "\(UIString.columnPeriod(language)): "
+                    + Localization.periodLabel(payment.period, language: language)))
+
+        let save = DOM.element("button", class: "button primary", text: UIString.actionSave(language))
+        save.on("click") {
+            guard let amount = Double(amountField.value.string ?? ""), amount > 0,
+                let date = CalendarDate(iso8601: dateField.value.string ?? "")
+            else {
+                Toast.show(UIString.paymentInvalid(language), kind: .failure)
+                return
+            }
+            guard date <= today else {
+                Toast.show(UIString.paymentDateInFuture(language), kind: .failure)
+                return
+            }
+            Task {
+                do {
+                    try await api.updatePayment(id: payment.id, amount: amount, datePaid: date)
+                    Modal.dismiss()
+                    onRefresh()
+                } catch {
+                    Toast.show(String(describing: error), kind: .failure)
+                }
+            }
+        }
+
+        Modal.present(
+            title: "\(UIString.editPaymentTitle(language)) — \(payment.expenseName)",
+            body: body,
+            actions: [cancelButton(), save]
+        )
+    }
+
     // MARK: - Create and edit
 
     func openExpenseEditor(existing: Expense?) {

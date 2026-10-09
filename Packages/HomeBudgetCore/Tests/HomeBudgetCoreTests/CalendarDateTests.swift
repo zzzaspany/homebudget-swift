@@ -67,4 +67,17 @@ struct CalendarDateTests {
             #expect(CalendarDate(julianDayNumber: date.julianDayNumber) == date)
         }
     }
+
+    @Test("Reads an ISO date and refuses one that does not exist")
+    func parsesISO8601() {
+        #expect(CalendarDate(iso8601: "2026-10-03") == CalendarDate(year: 2026, month: 10, day: 3))
+        #expect(CalendarDate(iso8601: "2024-02-29") == CalendarDate(year: 2024, month: 2, day: 29))
+        #expect(CalendarDate(iso8601: "2026-02-29") == nil)
+        #expect(CalendarDate(iso8601: "2026-13-01") == nil)
+        #expect(CalendarDate(iso8601: "2026-1-5") == nil)
+        #expect(CalendarDate(iso8601: "2026-10-03T00:00:00Z") == nil)
+        #expect(CalendarDate(iso8601: "") == nil)
+        let date = CalendarDate(year: 2026, month: 1, day: 9)
+        #expect(CalendarDate(iso8601: date.iso8601) == date)
+    }
 }

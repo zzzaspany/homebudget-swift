@@ -15,6 +15,11 @@ updating before the container will start.
 
 ### Added
 
+- **Correcting a recorded payment** — its date and amount — from the ✎ button in the web client's
+  payment history (`PUT /api/payments/:id`). A payment is always stamped with the day it was entered,
+  so one entered late carried the wrong date with no way to fix it short of editing the database.
+  The period it settles is deliberately left alone: moving it would quietly change which bills
+  count as paid. A future date is refused. Additive; existing clients are unaffected.
 - **Read-only API tokens** (`API_TOKENS`), so a shortcut, an automation or a script can read the
   budget without an Authelia sign-in page it cannot use. A token may only `GET`; every write is
   refused with 403, enforced in the middleware so an endpoint added later is closed by default. See
