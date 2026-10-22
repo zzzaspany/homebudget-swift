@@ -3,6 +3,24 @@
 This repository is public. The rules are in [AGENTS.md](https://github.com/zzzaspany/homebudget-swift/blob/main/AGENTS.md); this file is what went
 wrong.
 
+## The container stayed down for days because the secret fetch lost a race with DNS
+
+**Symptom.** `homebudget-swift.service` inactive, `homebudget-swift-secrets.service` failed with
+`curl: (6) Could not resolve host`. It had worked for days, then failed at every boot afterwards.
+Nothing alerted, so it was found only when someone looked.
+
+**Cause.** The unit starts before the resolver is reachable. It already declares
+`After=network-online.target` and `Wants=network-online.target`, which reads as correct — but this
+is a **user** unit, and in the user manager that target is not wired to anything that waits for the
+network. The ordering is honoured and means nothing. `RemainAfterExit=yes` with no `Restart=`
+then makes the failure permanent until the next boot.
+
+**Fix.** `provision-secrets.sh` now waits for the Infisical host to resolve before its first
+request, retrying for up to a minute, and passes `--retry --retry-connrefused` to both curl calls.
+Do not trust `network-online.target` in a user unit; wait for the thing you actually need.
+
+*Hit 2026-10-22, after the service had been failing since 2026-10-15.*
+
 ## A password was echoed into the terminal
 
 **Symptom.** A generated database password appeared in command output.

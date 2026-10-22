@@ -140,16 +140,25 @@ same rule `API_TOKENS` follows.
 ### What to set in this lab
 
 ntfy already runs on the same Podman host as this app, so the push never leaves the machine.
-These go into Infisical (project **Podman Services**, environment **`homebudget-prd`**) like every
-other secret — `provision-secrets.sh` writes them into the runtime env file at boot, and nothing
-lands on disk.
+
+These come from Infisical, in the project holding application secrets, environment **`prod`**.
+`deploy/homebudget-swift.env.template` declares which ones and maps them onto the variable names
+the app reads; `provision-secrets.sh` renders it into the runtime env file at boot, so nothing
+lands on disk. The ntfy credentials are not copied into this deployment's own folder — the
+template cites the shared `/ntfy` folder directly, so there is one copy of the publisher password
+and one place to rotate it:
 
 ```
-NTFY_URL=http://host.containers.internal:8095/
-NTFY_TOPIC=lab-alerts
-NTFY_USER=labalerts
-NTFY_PASSWORD=<the ntfy publisher password, already in the ntfy-prd environment>
+NTFY_URL={{/ntfy/BASE_URL}}
+NTFY_TOPIC={{/ntfy/TOPIC}}
+NTFY_USER={{/ntfy/PUBLISHER_USER}}
+NTFY_PASSWORD={{/ntfy/PUBLISHER_PASSWORD}}
 ```
+
+Publishing uses the scoped publisher account rather than the ntfy admin one. Mail is the same
+arrangement: `SMTP_HOST` and `SMTP_PORT` cite `/shared`, because every service in the lab that
+sends mail goes through one relay and that address should exist once. It previously existed five
+times, in five per-service environments, and all five were stale after the network was renumbered.
 
 `host.containers.internal` rather than an address: from inside a rootless container `127.0.0.1` is
 the container itself, and the host's own LAN address (`192.0.2.10:8095`) is **not** reachable —
