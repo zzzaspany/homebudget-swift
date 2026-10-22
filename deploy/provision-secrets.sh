@@ -45,18 +45,25 @@ if [[ ! -r "$TEMPLATE" ]]; then
     exit 1
 fi
 
-# At boot this unit has repeatedly started before the resolver was reachable and died on
-# "Could not resolve host", leaving the container down until someone noticed. The unit already
-# orders itself After=network-online.target, but in the *user* manager that target does not wait
-# for anything, so the ordering reads as correct and does nothing. Waiting here is what works.
+# This unit has started before the resolver was ready and died on "Could not resolve host". The
+# unit orders itself After=network-online.target, but in the *user* manager that target does not
+# wait for anything, so the ordering reads as correct and does nothing.
+#
+# The wait must stay well inside the unit's TimeoutStartSec, or systemd kills the script before it
+# does any work and the failure is reported as a timeout instead of naming the cause -- which is
+# exactly what happened the first time this was written with a 60s budget against a 60s timeout.
 # See docs/troubleshooting/secrets.md.
+RESOLVE_ATTEMPTS="${RESOLVE_ATTEMPTS:-10}"
 host_only="${INFISICAL_HOST#*://}"; host_only="${host_only%%[:/]*}"
-for attempt in $(seq 1 30); do
+for attempt in $(seq 1 "$RESOLVE_ATTEMPTS"); do
     if getent hosts "$host_only" >/dev/null 2>&1; then
         break
     fi
-    if [[ "$attempt" -eq 30 ]]; then
-        echo "Gave up waiting for $host_only to resolve after 30 attempts." >&2
+    if [[ "$attempt" -eq "$RESOLVE_ATTEMPTS" ]]; then
+        echo "$host_only did not resolve after ${RESOLVE_ATTEMPTS} attempts over $((RESOLVE_ATTEMPTS * 2))s." >&2
+        echo "This is a name resolution fault, not a slow boot -- check the resolver this host uses" >&2
+        echo "for the internal domain. 'resolvectl status' shows per-link and global servers separately," >&2
+        echo "and a stale global entry wins over a correct one supplied by DHCP on the link." >&2
         exit 1
     fi
     sleep 2
