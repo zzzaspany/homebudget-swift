@@ -3,6 +3,34 @@
 This repository is public. The rules are in [AGENTS.md](https://github.com/zzzaspany/homebudget-swift/blob/main/AGENTS.md); this file is what went
 wrong.
 
+## The container stayed down for a week because the internal domain stopped resolving
+
+**Symptom.** `homebudget-swift.service` inactive, `homebudget-swift-secrets.service` failed with
+`curl: (6) Could not resolve host`. It had worked, then failed at every boot afterwards. Nothing
+alerted, so it was found only when someone looked.
+
+**Cause.** Not a slow boot, which is what the boot-time failures suggested and what the first
+attempt at this entry claimed. The name did not resolve *at all* — `getent hosts` and `curl` both
+failed days after boot, while public names resolved fine. `resolvectl status` showed why: a
+**global** DNS server statically configured in `/etc/systemd/resolved.conf`, pointing at the
+resolver's address from before the network was renumbered, together with `Domains=<internal domain>`.
+That routes every query for the internal domain to a dead server, while everything else falls
+through to the per-link servers DHCP supplies correctly. Public names worked, internal names did
+not, and the split made it look like a service problem rather than a host one.
+
+**Fix.** Drop the static global entry and let DHCP's per-link configuration apply. When a host
+resolves public names but not internal ones, read `resolvectl status` rather than `/etc/resolv.conf`:
+the stub resolver lists global and per-link servers separately, and a stale global entry wins.
+
+`provision-secrets.sh` also now waits for the host to resolve before its first request, so the
+failure names the cause instead of surfacing as a connection error. The wait is a diagnostic, not
+the fix — it cannot help when resolution is broken rather than late. Keep its budget well inside the
+unit's `TimeoutStartSec`: written first as 30 attempts of 2s against a 60s timeout, it consumed the
+whole allowance and systemd killed the script before it did any work, reporting a timeout and hiding
+the real error.
+
+*Hit 2026-10-22; the service had been failing since 2026-10-15, the first boot after the renumbering.*
+
 ## A password was echoed into the terminal
 
 **Symptom.** A generated database password appeared in command output.

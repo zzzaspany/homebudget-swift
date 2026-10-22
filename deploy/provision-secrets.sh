@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
-# Fetches this deployment's secrets from Infisical and writes them where the container unit can
-# read them.
+# Renders this deployment's environment from Infisical and writes it where the container unit can
+# read it.
 #
 # The output goes to the user's runtime directory, which is tmpfs: the secrets exist only while
 # the machine is up and never reach persistent storage. What does live on disk is a single
-# credential — a machine identity scoped to read one environment — instead of every secret it
-# fetches.
+# credential — a machine identity scoped to one project — instead of every secret it fetches.
+#
+# The template beside this script decides what the container receives. A secret's name in the
+# vault is not the variable name the application reads, so the template is the mapping between
+# them; it also keeps non-secret settings in git, where a change shows up in a diff.
 #
 # Run by homebudget-swift-secrets.service, which the container unit requires.
 
@@ -17,6 +20,7 @@ CONFIG="${INFISICAL_CONFIG:-$HOME/.config/containers/systemd/infisical.env}"
 # trust anchor instead. Being the root rather than the leaf, it keeps working when the server
 # certificate is renewed. Installing it into the system trust store would let CA_BUNDLE go away.
 CA_BUNDLE="${INFISICAL_CA_BUNDLE:-$HOME/.config/containers/systemd/vault-ca.pem}"
+TEMPLATE="${SECRETS_TEMPLATE:-$(dirname "$(readlink -f "$0")")/homebudget-swift.env.template}"
 OUTPUT="${SECRETS_OUTPUT:-${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/homebudget-swift.env}"
 
 if [[ ! -r "$CONFIG" ]]; then
@@ -36,12 +40,41 @@ if [[ ! -r "$CA_BUNDLE" ]]; then
     exit 1
 fi
 
+if [[ ! -r "$TEMPLATE" ]]; then
+    echo "Missing $TEMPLATE — it declares which secrets this deployment needs." >&2
+    exit 1
+fi
+
+# This unit has started before the resolver was ready and died on "Could not resolve host". The
+# unit orders itself After=network-online.target, but in the *user* manager that target does not
+# wait for anything, so the ordering reads as correct and does nothing.
+#
+# The wait must stay well inside the unit's TimeoutStartSec, or systemd kills the script before it
+# does any work and the failure is reported as a timeout instead of naming the cause -- which is
+# exactly what happened the first time this was written with a 60s budget against a 60s timeout.
+# See docs/troubleshooting/secrets.md.
+RESOLVE_ATTEMPTS="${RESOLVE_ATTEMPTS:-10}"
+host_only="${INFISICAL_HOST#*://}"; host_only="${host_only%%[:/]*}"
+for attempt in $(seq 1 "$RESOLVE_ATTEMPTS"); do
+    if getent hosts "$host_only" >/dev/null 2>&1; then
+        break
+    fi
+    if [[ "$attempt" -eq "$RESOLVE_ATTEMPTS" ]]; then
+        echo "$host_only did not resolve after ${RESOLVE_ATTEMPTS} attempts over $((RESOLVE_ATTEMPTS * 2))s." >&2
+        echo "This is a name resolution fault, not a slow boot -- check the resolver this host uses" >&2
+        echo "for the internal domain. 'resolvectl status' shows per-link and global servers separately," >&2
+        echo "and a stale global entry wins over a correct one supplied by DHCP on the link." >&2
+        exit 1
+    fi
+    sleep 2
+done
+
 # Exchange the identity's credentials for a short-lived token. Passed over stdin rather than as
 # arguments, which would be visible in the process list.
 token=$(
     jq -n --arg id "$INFISICAL_CLIENT_ID" --arg secret "$INFISICAL_CLIENT_SECRET" \
         '{clientId: $id, clientSecret: $secret}' |
-        curl -sS --fail-with-body --max-time 30 --cacert "$CA_BUNDLE" \
+        curl -sS --fail-with-body --max-time 30 --retry 3 --retry-connrefused --cacert "$CA_BUNDLE" \
             -X POST "$INFISICAL_HOST/api/v1/auth/universal-auth/login" \
             -H 'Content-Type: application/json' --data @- |
         jq -r '.accessToken'
@@ -52,15 +85,17 @@ if [[ -z "$token" || "$token" == "null" ]]; then
     exit 1
 fi
 
+# recursive=true because the secrets sit in folders — /homebudget for this deployment's own, and
+# /shared and /ntfy for values other services use too, stored once rather than copied per service.
 secrets=$(
-    curl -sS --fail-with-body --max-time 30 --cacert "$CA_BUNDLE" \
+    curl -sS --fail-with-body --max-time 30 --retry 3 --retry-connrefused --cacert "$CA_BUNDLE" \
         -H "Authorization: Bearer $token" \
-        "$INFISICAL_HOST/api/v3/secrets/raw?workspaceId=$INFISICAL_PROJECT_ID&environment=$INFISICAL_ENV&secretPath=%2F"
+        "$INFISICAL_HOST/api/v3/secrets/raw?workspaceId=$INFISICAL_PROJECT_ID&environment=$INFISICAL_ENV&secretPath=%2F&recursive=true"
 )
 
 count=$(jq '.secrets | length' <<<"$secrets")
 if [[ "$count" -eq 0 ]]; then
-    echo "Refusing to write an empty environment file: Infisical returned no secrets" >&2
+    echo "Refusing to write an environment file: Infisical returned no secrets" >&2
     exit 1
 fi
 
@@ -70,12 +105,29 @@ umask 077
 temporary=$(mktemp "${OUTPUT}.XXXXXX")
 trap 'rm -f "$temporary"' EXIT
 
+# Substitution happens inside jq rather than through sed, so a value containing a slash, an
+# ampersand or a newline cannot corrupt the output or be interpreted as a pattern. A placeholder
+# with no matching secret aborts the run: a partially rendered file would start the container with
+# a literal "{{/path/NAME}}" as a password, which fails far from its cause.
 {
-    echo "# Written by provision-secrets.sh from Infisical ($INFISICAL_ENV). Do not edit."
-    jq -r '.secrets[] | "\(.secretKey)=\(.secretValue)"' <<<"$secrets"
+    echo "# Rendered by provision-secrets.sh from Infisical ($INFISICAL_ENV). Do not edit."
+    jq -rn --rawfile template "$TEMPLATE" --argjson secrets "$secrets" '
+        ($secrets.secrets
+          | map({key: ((.secretPath | rtrimstr("/")) + "/" + .secretKey), value: .secretValue})
+          | from_entries) as $byPath
+        | $template
+        | split("\n")
+        | map(
+            if (ltrimstr(" ") | startswith("#")) then .
+            else gsub("\\{\\{[[:space:]]*(?<p>[^}[:space:]]+)[[:space:]]*\\}\\}";
+                      $byPath[.p] // error("no secret at " + .p))
+            end
+          )
+        | join("\n")
+    ' </dev/null
 } >"$temporary"
 
 mv "$temporary" "$OUTPUT"
 trap - EXIT
 
-echo "Wrote $count secrets to $OUTPUT"
+echo "Wrote $(grep -cE '^[A-Za-z0-9_]+=' "$OUTPUT") variables to $OUTPUT from $count secrets"
