@@ -11,7 +11,7 @@ symptom is findable — that is what you will search for at the point you need t
 | [internal-ca-and-tls.md](internal-ca-and-tls.md) | The OfficeLab CA, and why iOS rejects the wildcard certificate |
 | [eventkit.md](eventkit.md) | Reminders and Calendar export: dates, alarms, permission levels |
 | [containers-and-deployment.md](containers-and-deployment.md) | Apple `container`, Podman Quadlets, image architecture |
-| [secrets.md](secrets.md) | Leaks, rotation, history rewriting, Infisical |
+| [secrets.md](secrets.md) | Leaks, rotation, history rewriting, the secret store |
 | [ui.md](ui.md) | Web typography and Swift Charts axis behaviour |
 | [database.md](database.md) | PostgreSQL encoding, migration from PocketBase, client tooling |
 

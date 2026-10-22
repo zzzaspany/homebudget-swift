@@ -57,7 +57,7 @@ The validity period is the only variable, so the diagnosis holds.
 *Hit 2026-09-08, resolved the same day.* The original root's private key turned out to be
 unrecoverable — it was not in Infisical, on the Podman host, or in the Mac keychain, which held the
 certificate without its key — so a new root (`OfficeLab Root CA 2026`) was minted and a 397-day
-wildcard issued from it. Both live in Infisical under Proxmox Services / `npm-prd`. The runbook and
+wildcard issued from it. Both now live in OpenBao at `secret/pki`, as `CA_CERT`/`CA_KEY` and `WILDCARD_CERT`/`WILDCARD_KEY` — they moved there on 2026-10-22, having previously been in Infisical under `Proxmox Services` / `npm-prd`. No machine identity can read that path. The runbook and
 the yearly reissue script are in `office-proxmox-server` (`08-officelab-ca.md`); do not duplicate
 them here.
 

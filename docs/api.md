@@ -17,7 +17,7 @@ API_TOKENS=shortcuts:S0meLongRandomSecretValue,n8n:AnotherLongRandomSecret
   unexpected call can be traced to the client that made it.
 - The **secret** must be at least 24 characters. Generate one, do not invent one:
   `openssl rand -base64 32`.
-- Secrets live in Infisical alongside the rest, never in the repository — it is public.
+- Secrets live in OpenBao alongside the rest, never in the repository — it is public.
 - **Unset means off.** There is no built-in token and no default. An app nobody configured is an app
   no machine can call.
 

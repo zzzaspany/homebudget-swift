@@ -48,7 +48,7 @@ When a unit does not appear, check the generator directly rather than guessing:
 
 The environment file is written into the runtime directory (`%t`, tmpfs) by a separate unit rather
 than an `ExecStartPre`, so systemd is guaranteed to be able to read it when it starts the container.
-`Requires=homebudget-swift-secrets.service`. Only one scoped Infisical credential is on disk; every
+`Requires=homebudget-swift-secrets.service`. Only one scoped AppRole credential is on disk; every
 other secret is fetched at start and never persisted. See `deploy/provision-secrets.sh`.
 
 ## Still unverified

@@ -17,18 +17,26 @@ signed in** — the port must not be exposed beyond the reverse proxy.
 
 ## Secrets
 
-Fetched from Infisical at start-up rather than kept in a file. `homebudget-swift-secrets.service`
+Fetched from OpenBao at start-up rather than kept in a file. `homebudget-swift-secrets.service`
 runs before the container and writes them into the user's runtime directory, which is tmpfs — the
 values exist only while the machine is up and never reach persistent storage.
 
-What does live on disk is one credential: a machine identity scoped to read a single environment,
-in `infisical.env`. Losing that file exposes far less than the secrets it fetches, and it can be
-revoked without touching anything else.
+What lives on disk is one credential, in `openbao.env`: an **AppRole** whose policy covers three
+paths — this deployment's own, plus the two holding values it shares with other services. Everything
+else answers 403, and that was tested rather than assumed: the role is denied on the other services'
+paths on the same host, on the certificate authority keys, and on the infrastructure API token. A
+SecretID can be revoked by its accessor without disturbing the role, so losing the file is
+recoverable without re-issuing anything else.
+
+`deploy/homebudget-swift.env.template` decides which of those paths are read: the script derives
+them from the placeholders, so the request matches the policy and adding a placeholder cannot forget
+to widen the fetch. If a template ever names a path outside the policy, the 403 says which — the run
+does not quietly succeed with a gap.
 
 The instance sits behind an internal CA the host does not trust. Verification is not disabled —
-this connection carries every secret — so the expected certificate is pinned as the trust anchor in
-`vault-ca.pem`. Replace it when the certificate is renewed, or better, install the root CA into the
-system trust store and drop the `--cacert` argument.
+this connection carries every secret — so the root CA is the trust anchor in `vault-ca.pem`. Being
+the root rather than the leaf, it keeps working when the server certificate is renewed. Installing
+it into the system trust store would let `--cacert` go away.
 
 ## First install
 
@@ -36,16 +44,17 @@ system trust store and drop the `--cacert` argument.
 mkdir -p ~/.config/containers/systemd
 cp deploy/homebudget.network deploy/*.container ~/.config/containers/systemd/
 
-cp deploy/infisical.env.example ~/.config/containers/systemd/infisical.env
-# Fill in the machine identity's client id and secret, and the project id.
-chmod 600 ~/.config/containers/systemd/infisical.env
+cp deploy/openbao.env.example ~/.config/containers/systemd/openbao.env
+# Fill in BAO_ADDR and the AppRole's role id and secret id.
+chmod 600 ~/.config/containers/systemd/openbao.env
 
+# The template travels with the script: it is read from beside it.
 install -m 755 deploy/provision-secrets.sh ~/.local/bin/
+install -m 644 deploy/homebudget-swift.env.template ~/.local/bin/
 cp deploy/homebudget-swift-secrets.service ~/.config/systemd/user/
 
-# Pin the certificate the Infisical instance presents.
-openssl s_client -connect vault.example.lab:443 -servername vault.example.lab </dev/null 2>/dev/null \
-  | openssl x509 -outform pem > ~/.config/containers/systemd/vault-ca.pem
+# The trust anchor is the internal root CA, which outlives any one server certificate.
+cp deploy/officelab-root-ca.crt ~/.config/containers/systemd/vault-ca.pem
 
 systemctl --user daemon-reload
 systemctl --user enable homebudget-swift-secrets.service
@@ -114,7 +123,7 @@ health check without granting anything.
 
 `API_TOKENS` holds comma-separated `name:secret` pairs and grants **read-only** access without an
 Authelia session, for shortcuts and automations. Unset means no machine can call the API, which is
-the default. Secrets go in Infisical with the rest. See [api.md](api.md), which also sets out what
+the default. Secrets go in OpenBao with the rest. See [api.md](api.md), which also sets out what
 the token does not protect against — the app publishes port 8000 on the lab network, and a request
 that reaches it directly can set its own identity headers and write.
 
@@ -141,7 +150,7 @@ same rule `API_TOKENS` follows.
 
 ntfy already runs on the same Podman host as this app, so the push never leaves the machine.
 
-These come from Infisical, in the project holding application secrets, environment **`prod`**.
+These come from OpenBao, under `secret/`.
 `deploy/homebudget-swift.env.template` declares which ones and maps them onto the variable names
 the app reads; `provision-secrets.sh` renders it into the runtime env file at boot, so nothing
 lands on disk. The ntfy credentials are not copied into this deployment's own folder — the
@@ -180,7 +189,7 @@ podman exec ntfy ntfy access labalerts homebudget rw
 then set `NTFY_TOPIC=homebudget`. The `labalerts` user currently has read-write on `lab-alerts`
 and nothing else, so changing the topic without that grant would make every push fail with 403.
 
-After changing anything in Infisical, the secrets unit has to re-run — the env file is built once
+After changing anything in OpenBao, the secrets unit has to re-run — the env file is built once
 at boot:
 
 ```bash

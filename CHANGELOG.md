@@ -13,6 +13,29 @@ updating before the container will start.
 
 ## [Unreleased]
 
+### Changed
+
+- Secrets come from **OpenBao** instead of Infisical. The deployment's on-disk credential is an
+  AppRole whose policy covers three paths — this deployment's own, plus the two holding values it
+  shares with other services. Everything else answers 403.
+
+  This is **configuration-breaking**: `~/.config/containers/systemd/infisical.env` is replaced by
+  `openbao.env` with `BAO_ADDR`, `BAO_ROLE_ID` and `BAO_SECRET_ID`, and the template now has to be
+  installed beside the script in `~/.local/bin/`. See [docs/deployment.md](docs/deployment.md).
+
+  The reason for moving is recorded in [docs/troubleshooting/secrets.md](docs/troubleshooting/secrets.md):
+  Infisical would not scope an identity below the project, so this credential could read all 74
+  secrets in its project, including infrastructure API tokens and host SSH keys — while its own
+  comment claimed it was scoped to one environment. It now reaches 12.
+
+  Verified before cutting over: the file rendered from OpenBao was diffed against the one the
+  container was running, and came out identical, 11 variables either side. `/health` answers `ok`
+  afterwards.
+
+- Only the paths the template names are read, derived from its placeholders rather than listed in
+  the script, so adding a placeholder cannot forget to widen the fetch — and a path outside the
+  policy fails with a 403 naming it instead of the run quietly succeeding with a gap.
+
 ### Added
 
 - **Correcting a recorded payment** — its date and amount — from the ✎ button in the web client's
