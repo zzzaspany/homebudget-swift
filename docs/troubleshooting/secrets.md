@@ -66,6 +66,24 @@ commit messages).
 Order matters: rotate the credential first, rewrite history second. A rewritten history does not
 un-leak a credential that is still live, and anyone who cloned in between still has it.
 
+## The AppRole could not be scoped below the project, so the store changed
+
+**Symptom.** Not a failure — a limit. Infisical would not let a machine identity read one folder and
+not another, so this deployment's on-disk credential could read every secret in its project: 74 of
+them, including infrastructure API tokens and host SSH keys. Its own comment claimed it was "scoped
+to read one environment". It was not.
+
+**Cause.** Scoping below the project is a paid feature there. Custom roles with a `secretPath`
+condition, identity additional privileges and folder-level access controls were each tried against
+the instance and each refused, the first with *"Upgrade to Infisical Enterprise plan"*.
+
+**Fix.** Moved to OpenBao, where a policy per consumer is free. This deployment's AppRole reads three
+paths and is refused with a 403 on everything else — tested by logging in and watching it refuse,
+including on the other services' paths on this same host. The credential now reaches 12 secrets
+rather than 74.
+
+*Hit 2026-10-22.*
+
 ## Infisical
 
 All credentials live there. Deployments fetch them into tmpfs at start.
