@@ -19,12 +19,15 @@ PublishPort=8000:8000
 
 Volume=homebudget-swift-uploads:/app/data/uploads
 
+# Deployment settings (SMTP relay, addresses, ntfy server/topic) - not secret, but specific to
+# one host, so they live on the host and not in this public repository.
+EnvironmentFile=%h/.config/containers/systemd/homebudget-swift.config.env
 EnvironmentFile=%t/homebudget-swift.env
 
 [Service]
 # Migrations run before the container starts. This belongs to [Service], not [Container] — the
 # Quadlet generator rejects the whole unit if it appears above.
-ExecStartPre=/usr/bin/podman run --rm --env-file %t/homebudget-swift.env ghcr.io/zzzaspany/homebudget-swift:latest migrate --yes
+ExecStartPre=/usr/bin/podman run --rm --env-file %h/.config/containers/systemd/homebudget-swift.config.env --env-file %t/homebudget-swift.env ghcr.io/zzzaspany/homebudget-swift:latest migrate --yes
 Restart=always
 RestartSec=5
 

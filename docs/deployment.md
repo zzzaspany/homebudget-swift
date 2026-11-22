@@ -21,8 +21,8 @@ Fetched from OpenBao at start-up rather than kept in a file. `homebudget-swift-s
 runs before the container and writes them into the user's runtime directory, which is tmpfs — the
 values exist only while the machine is up and never reach persistent storage.
 
-What lives on disk is one credential, in `openbao.env`: an **AppRole** whose policy covers three
-paths — this deployment's own, plus the two holding values it shares with other services. Everything
+What lives on disk is one credential, in `openbao.env`: an **AppRole** whose policy covers the
+paths the template names. Everything
 else answers 403, and that was tested rather than assumed: the role is denied on the other services'
 paths on the same host, on the certificate authority keys, and on the infrastructure API token. A
 SecretID can be revoked by its accessor without disturbing the role, so losing the file is
@@ -51,6 +51,8 @@ chmod 600 ~/.config/containers/systemd/openbao.env
 # The template travels with the script: it is read from beside it.
 install -m 755 deploy/provision-secrets.sh ~/.local/bin/
 install -m 644 deploy/homebudget-swift.env.template ~/.local/bin/
+# Deployment settings (not secret, not in this repo) - see "What to set in this lab".
+install -m 600 /path/to/homebudget-swift.config.env ~/.config/containers/systemd/
 cp deploy/homebudget-swift-secrets.service ~/.config/systemd/user/
 
 # The trust anchor is the internal root CA, which outlives any one server certificate.
@@ -150,24 +152,30 @@ same rule `API_TOKENS` follows.
 
 ntfy already runs on the same Podman host as this app, so the push never leaves the machine.
 
-These come from OpenBao, under `secret/`.
+Two files, split by whether a value is a secret.
+
+**Secrets** come from OpenBao, under `secret/office-lab-v1/<service>/<purpose>`.
 `deploy/homebudget-swift.env.template` declares which ones and maps them onto the variable names
 the app reads; `provision-secrets.sh` renders it into the runtime env file at boot, so nothing
-lands on disk. The ntfy credentials are not copied into this deployment's own folder — the
-template cites the shared `/ntfy` folder directly, so there is one copy of the publisher password
-and one place to rotate it:
+lands on disk:
 
 ```
-NTFY_URL={{/ntfy/BASE_URL}}
-NTFY_TOPIC={{/ntfy/TOPIC}}
-NTFY_USER={{/ntfy/PUBLISHER_USER}}
-NTFY_PASSWORD={{/ntfy/PUBLISHER_PASSWORD}}
+DATABASE_URL={{/office-lab-v1/postgres/homebudget/database_url}}
+NTFY_USER={{/office-lab-v1/ntfy/labalerts/username}}
+NTFY_PASSWORD={{/office-lab-v1/ntfy/labalerts/password}}
 ```
 
-Publishing uses the scoped publisher account rather than the ntfy admin one. Mail is the same
-arrangement: `SMTP_HOST` and `SMTP_PORT` cite `/shared`, because every service in the lab that
-sends mail goes through one relay and that address should exist once. It previously existed five
-times, in five per-service environments, and all five were stale after the network was renumbered.
+The ntfy credentials are the shared `labalerts` publisher, cited directly, so there is one copy of
+the password and one place to rotate it. Publishing uses that scoped account rather than the ntfy
+admin one.
+
+**Deployment settings** - `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, `SMTP_USER`,
+`NOTIFICATION_EMAIL_TO`, `NTFY_URL`, `NTFY_TOPIC` - are not secret, but they identify the host and
+its owner, and this repository is public. They live in
+`~/.config/containers/systemd/homebudget-swift.config.env` on the host, which the unit reads as a
+second `EnvironmentFile` (and the migration step as a second `--env-file`). In this lab that file
+is kept in the private `office-podman-services` repository. Mail goes through the lab's one
+relay, without authentication, hence no `SMTP_PASSWORD`.
 
 `host.containers.internal` rather than an address: from inside a rootless container `127.0.0.1` is
 the container itself, and the host's own LAN address (`192.0.2.10:8095`) is **not** reachable —
